@@ -63,7 +63,7 @@ export default function HomePage() {
               Essai 30 jours gratuit · Aucune carte bancaire requise
             </p>
             <p className="text-xs text-muted-foreground">
-              Ensuite dès 5,99 €/mois · Code <span className="font-medium text-amber-600">EARLY100</span> = -25% à vie
+              Ensuite dès 9,90 CHF/mois · Code <span className="font-medium text-amber-600">EARLY100</span> = -25% à vie
             </p>
           </div>
         </div>
