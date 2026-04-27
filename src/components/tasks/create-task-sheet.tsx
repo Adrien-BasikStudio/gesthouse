@@ -83,7 +83,11 @@ export default function CreateTaskSheet({
                 <Label>Assignée à</Label>
                 <Select value={assignedTo} onValueChange={(v) => setAssignedTo(v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="N'importe qui" />
+                    <SelectValue>
+                      {assignedTo && assignedTo !== 'none'
+                        ? (members.find(m => m.user_id === assignedTo)?.profiles?.display_name ?? 'Membre')
+                        : <span className="text-muted-foreground">N&apos;importe qui</span>}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">N&apos;importe qui</SelectItem>
@@ -111,7 +115,11 @@ export default function CreateTaskSheet({
               <Label>Répétition</Label>
               <Select value={recurrence} onValueChange={(v) => setRecurrence(v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pas de répétition" />
+                  <SelectValue>
+                    {recurrence && recurrence !== 'none'
+                      ? (RECURRENCE_OPTIONS.find(o => o.value === recurrence)?.label ?? recurrence)
+                      : <span className="text-muted-foreground">Pas de répétition</span>}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {RECURRENCE_OPTIONS.map((opt) => (
