@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -10,8 +11,8 @@ const createHouseholdSchema = z.object({
 })
 
 export async function createHousehold(formData: FormData) {
+  // Vérifie l'identité via le client normal
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -26,7 +27,10 @@ export async function createHousehold(formData: FormData) {
 
   const { name, emoji } = parsed.data
 
-  const { data: household, error: householdError } = await supabase
+  // Utilise le client admin pour l'insert (bypass RLS pour l'initialisation)
+  const admin = createAdminClient()
+
+  const { data: household, error: householdError } = await admin
     .from('households')
     .insert({ name, emoji, created_by: user.id })
     .select()
@@ -36,7 +40,7 @@ export async function createHousehold(formData: FormData) {
     return { error: householdError?.message ?? 'Erreur création foyer' }
   }
 
-  const { error: memberError } = await supabase
+  const { error: memberError } = await admin
     .from('household_members')
     .insert({ household_id: household.id, user_id: user.id, role: 'admin' })
 
