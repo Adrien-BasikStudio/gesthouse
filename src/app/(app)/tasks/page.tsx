@@ -40,7 +40,7 @@ export default async function TasksPage() {
   const now = new Date()
 
   // Aujourd'hui : toutes les tâches non complétées + complétées aujourd'hui
-  const { data: todayTasks } = await supabase
+  const { data: todayTasks } = await admin
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
     .eq('household_id', householdId)
@@ -48,7 +48,7 @@ export default async function TasksPage() {
     .order('due_at', { ascending: true, nullsFirst: false })
 
   // Semaine : tâches avec une date dans la semaine courante
-  const { data: weekTasks } = await supabase
+  const { data: weekTasks } = await admin
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
     .eq('household_id', householdId)
@@ -57,7 +57,7 @@ export default async function TasksPage() {
     .order('due_at', { ascending: true })
 
   // Historique : complétées avant aujourd'hui
-  const { data: historyTasks } = await supabase
+  const { data: historyTasks } = await admin
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
     .eq('household_id', householdId)
