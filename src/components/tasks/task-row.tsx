@@ -45,14 +45,14 @@ export default function TaskRow({ task }: { task: Task }) {
   }
 
   return (
-    <div className={`flex items-start gap-3 p-3 rounded-xl transition-opacity ${isPending ? 'opacity-60' : ''}`}>
+    <div className={`flex items-center gap-3 px-4 py-3 bg-card rounded-2xl border transition-opacity ${isPending ? 'opacity-50' : ''}`}>
       <button
         onClick={handleToggle}
         disabled={isPending}
-        className={`mt-0.5 size-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
+        className={`size-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
           isDone
             ? 'bg-primary border-primary'
-            : 'border-muted-foreground/40 hover:border-primary'
+            : 'border-muted-foreground/30 hover:border-primary'
         }`}
       >
         {isDone && (
@@ -63,24 +63,27 @@ export default function TaskRow({ task }: { task: Task }) {
       </button>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium leading-tight ${isDone ? 'line-through text-muted-foreground' : ''}`}>
+        <p className={`text-sm font-medium leading-snug ${isDone ? 'line-through text-muted-foreground' : ''}`}>
           {task.title}
         </p>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {task.profiles?.display_name && (
             <span className="text-xs text-muted-foreground">{task.profiles.display_name}</span>
           )}
+          {task.profiles?.display_name && task.due_at && (
+            <span className="text-xs text-muted-foreground/40">·</span>
+          )}
           {task.due_at && (
-            <span className={`text-xs ${
+            <span className={`text-xs font-medium ${
               !isDone && new Date(task.due_at) < new Date()
-                ? 'text-destructive font-medium'
+                ? 'text-destructive'
                 : 'text-muted-foreground'
             }`}>
               {format(new Date(task.due_at), 'd MMM', { locale: fr })}
             </span>
           )}
           {task.recurrence_rule && (
-            <RotateCcw className="size-3 text-muted-foreground" />
+            <RotateCcw className="size-3 text-muted-foreground/60" />
           )}
         </div>
       </div>
@@ -88,7 +91,7 @@ export default function TaskRow({ task }: { task: Task }) {
       <button
         onClick={handleDelete}
         disabled={isPending}
-        className="shrink-0 p-1 rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+        className="shrink-0 p-1.5 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
       >
         <Trash2 className="size-4" />
       </button>

@@ -67,14 +67,14 @@ export default function TaskListRealtime({
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2 py-2">
       {pending.map((task) => (
         <TaskRow key={task.id} task={task} />
       ))}
 
       {done.length > 0 && (
-        <div className="mt-4">
-          <p className="text-xs text-muted-foreground font-medium px-3 mb-1">
+        <div className="mt-6 space-y-2">
+          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide px-1">
             Terminées ({done.length})
           </p>
           {done.map((task) => (

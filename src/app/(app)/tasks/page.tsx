@@ -67,18 +67,18 @@ export default async function TasksPage() {
     .limit(50)
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 pb-2">
+    <div className="flex flex-col h-full max-w-2xl mx-auto w-full">
+      <div className="px-4 pt-6 pb-2">
         <p className="text-sm text-muted-foreground">
           {household?.emoji} {household?.name}
         </p>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold mt-0.5">
           Bonjour {profile?.display_name} 👋
         </h1>
       </div>
 
       <Tabs defaultValue="today" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mb-2">
+        <TabsList className="mx-4 mt-2 mb-1">
           <TabsTrigger value="today" className="flex-1">
             Aujourd&apos;hui
             {(todayTasks?.filter(t => !t.completed_at).length ?? 0) > 0 && (
