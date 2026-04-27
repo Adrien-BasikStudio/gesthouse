@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CheckSquare, Calendar, ShoppingCart, ChefHat, Package, CreditCard } from 'lucide-react'
+import { CheckSquare, Calendar, ShoppingCart, CreditCard, Settings } from 'lucide-react'
 
 const navItems = [
   { href: '/tasks', label: 'Tâches', icon: CheckSquare },
   { href: '/calendar', label: 'Agenda', icon: Calendar },
   { href: '/shopping', label: 'Courses', icon: ShoppingCart },
-  { href: '/meals', label: 'Menus', icon: ChefHat },
   { href: '/expenses', label: 'Dépenses', icon: CreditCard },
+  { href: '/settings', label: 'Foyer', icon: Settings },
 ]
 
 export default function BottomNav() {

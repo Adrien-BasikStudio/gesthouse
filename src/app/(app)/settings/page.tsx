@@ -1,7 +1,94 @@
-export default function Page() {
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
+import MembersList from '@/components/settings/members-list'
+import InviteButton from '@/components/settings/invite-button'
+import LogoutButton from '@/components/settings/logout-button'
+import { Badge } from '@/components/ui/badge'
+
+export default async function SettingsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membership } = await supabase
+    .from('household_members')
+    .select('household_id, role, households(name, emoji, plan)')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+
+  if (!membership) redirect('/onboarding')
+
+  const householdId = membership.household_id
+  const household = membership.households as unknown as { name: string; emoji: string; plan: string }
+  const isAdmin = membership.role === 'admin'
+
+  const admin = createAdminClient()
+  const { data: members } = await admin
+    .from('household_members')
+    .select('user_id, role, joined_at, profiles(display_name, avatar_url)')
+    .eq('household_id', householdId)
+    .order('joined_at')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .single()
+
   return (
-    <div className="p-4">
-      <p className="text-muted-foreground mt-2">Module en cours de développement...</p>
+    <div className="p-4 space-y-6 pb-20">
+      <div>
+        <h1 className="text-2xl font-bold">Paramètres</h1>
+        <p className="text-muted-foreground text-sm">{profile?.display_name} · {user.email}</p>
+      </div>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+          Ma fourmilière
+        </h2>
+        <div className="bg-card rounded-2xl border p-4 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{household.emoji}</span>
+            <span className="font-semibold text-lg">{household.name}</span>
+            <Badge variant={household.plan === 'family' ? 'default' : 'secondary'}>
+              {household.plan === 'family' ? 'Famille' : 'Gratuit'}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {members?.length ?? 0} membre{(members?.length ?? 0) > 1 ? 's' : ''}
+          </p>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            Membres
+          </h2>
+          {isAdmin && <InviteButton householdId={householdId} />}
+        </div>
+        <MembersList
+          members={(members ?? []) as unknown as {
+            user_id: string
+            role: string
+            profiles: { display_name: string; avatar_url: string | null } | null
+          }[]}
+          currentUserId={user.id}
+          householdId={householdId}
+          isAdmin={isAdmin}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+          Compte
+        </h2>
+        <div className="bg-card rounded-2xl border">
+          <LogoutButton />
+        </div>
+      </section>
     </div>
   )
 }
