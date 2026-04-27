@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createHousehold } from '@/lib/actions/household'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,50 +11,23 @@ import { toast } from 'sonner'
 const EMOJIS = ['🏠', '🏡', '🏘️', '🏰', '🌻', '🌈', '⭐', '🦋', '🌿', '🎯']
 
 export default function OnboardingPage() {
-  const router = useRouter()
-  const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🏠')
+  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!name.trim()) return
     setLoading(true)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const formData = new FormData(e.currentTarget)
+    formData.set('emoji', emoji)
 
-    if (!user) {
-      router.push('/login')
-      return
-    }
+    const result = await createHousehold(formData)
 
-    // Créer le foyer
-    const { data: household, error: householdError } = await supabase
-      .from('households')
-      .insert({ name: name.trim(), emoji, created_by: user.id })
-      .select()
-      .single()
-
-    if (householdError || !household) {
-      toast.error(`Erreur foyer : ${householdError?.message ?? 'inconnue'}`)
+    if (result?.error) {
+      toast.error(result.error)
       setLoading(false)
-      return
     }
-
-    // Ajouter le créateur comme admin
-    const { error: memberError } = await supabase
-      .from('household_members')
-      .insert({ household_id: household.id, user_id: user.id, role: 'admin' })
-
-    if (memberError) {
-      toast.error(`Erreur membre : ${memberError.message}`)
-      setLoading(false)
-      return
-    }
-
-    toast.success(`Bienvenue dans ${emoji} ${name} !`)
-    router.push('/tasks')
   }
 
   return (
@@ -72,6 +44,7 @@ export default function OnboardingPage() {
               <Label htmlFor="name">Nom du foyer</Label>
               <Input
                 id="name"
+                name="name"
                 placeholder="Famille Martin"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
