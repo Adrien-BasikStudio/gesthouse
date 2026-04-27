@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { CheckSquare } from 'lucide-react'
+import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import TaskListRealtime from '@/components/tasks/task-list-realtime'
+import CreateTaskSheet from '@/components/tasks/create-task-sheet'
 
 export default async function TasksPage() {
   const supabase = await createClient()
@@ -20,26 +24,100 @@ export default async function TasksPage() {
     .limit(1)
     .single()
 
-  const household = membership?.households as { emoji?: string; name?: string } | null
+  if (!membership) redirect('/onboarding')
+
+  const householdId = membership.household_id
+  const household = membership.households as unknown as { name: string; emoji: string } | null
+
+  // Membres du foyer pour l'assignation
+  const { data: members } = await supabase
+    .from('household_members')
+    .select('user_id, profiles(display_name)')
+    .eq('household_id', householdId)
+
+  const now = new Date()
+
+  // Tâches du jour (dues aujourd'hui ou en retard, non complétées + complétées aujourd'hui)
+  const { data: todayTasks } = await supabase
+    .from('tasks')
+    .select('*, profiles:assigned_to(display_name)')
+    .eq('household_id', householdId)
+    .or(
+      `and(due_at.lte.${endOfDay(now).toISOString()},completed_at.is.null),` +
+      `and(completed_at.gte.${startOfDay(now).toISOString()},completed_at.lte.${endOfDay(now).toISOString()})`
+    )
+    .order('due_at', { ascending: true, nullsFirst: false })
+
+  // Tâches de la semaine
+  const { data: weekTasks } = await supabase
+    .from('tasks')
+    .select('*, profiles:assigned_to(display_name)')
+    .eq('household_id', householdId)
+    .gte('due_at', startOfWeek(now, { locale: fr }).toISOString())
+    .lte('due_at', endOfWeek(now, { locale: fr }).toISOString())
+    .order('due_at', { ascending: true })
+
+  // Historique (complétées, hors aujourd'hui)
+  const { data: historyTasks } = await supabase
+    .from('tasks')
+    .select('*, profiles:assigned_to(display_name)')
+    .eq('household_id', householdId)
+    .not('completed_at', 'is', null)
+    .lt('completed_at', startOfDay(now).toISOString())
+    .order('completed_at', { ascending: false })
+    .limit(50)
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            {household?.emoji} {household?.name}
-          </p>
-          <h1 className="text-2xl font-bold">
-            Bonjour {profile?.display_name} 👋
-          </h1>
-        </div>
+    <div className="flex flex-col h-full">
+      <div className="p-4 pb-2">
+        <p className="text-sm text-muted-foreground">
+          {household?.emoji} {household?.name}
+        </p>
+        <h1 className="text-2xl font-bold">
+          Bonjour {profile?.display_name} 👋
+        </h1>
       </div>
 
-      <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-        <CheckSquare className="size-12 text-muted-foreground/40" />
-        <p className="text-muted-foreground font-medium">La fourmilière est zen aujourd&apos;hui.</p>
-        <p className="text-sm text-muted-foreground">Personne n&apos;a rien à faire ? Profites-en !</p>
-      </div>
+      <Tabs defaultValue="today" className="flex-1 flex flex-col">
+        <TabsList className="mx-4 mb-2">
+          <TabsTrigger value="today" className="flex-1">
+            Aujourd&apos;hui
+            {(todayTasks?.filter(t => !t.completed_at).length ?? 0) > 0 && (
+              <span className="ml-1.5 size-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                {todayTasks!.filter(t => !t.completed_at).length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="week" className="flex-1">Semaine</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1">Historique</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="today" className="flex-1 px-4 overflow-y-auto">
+          <TaskListRealtime
+            initialTasks={todayTasks ?? []}
+            householdId={householdId}
+          />
+        </TabsContent>
+
+        <TabsContent value="week" className="flex-1 px-4 overflow-y-auto">
+          <TaskListRealtime
+            initialTasks={weekTasks ?? []}
+            householdId={householdId}
+          />
+        </TabsContent>
+
+        <TabsContent value="history" className="flex-1 px-4 overflow-y-auto">
+          <TaskListRealtime
+            initialTasks={historyTasks ?? []}
+            householdId={householdId}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <CreateTaskSheet
+        householdId={householdId}
+        members={(members ?? []) as unknown as { user_id: string; profiles: { display_name: string } | null }[]}
+      />
     </div>
   )
 }
