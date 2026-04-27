@@ -38,7 +38,7 @@ export default function OnboardingPage() {
       .single()
 
     if (householdError || !household) {
-      toast.error('Erreur lors de la création du foyer')
+      toast.error(`Erreur foyer : ${householdError?.message ?? 'inconnue'}`)
       setLoading(false)
       return
     }
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
       .insert({ household_id: household.id, user_id: user.id, role: 'admin' })
 
     if (memberError) {
-      toast.error('Erreur lors de la configuration du foyer')
+      toast.error(`Erreur membre : ${memberError.message}`)
       setLoading(false)
       return
     }
