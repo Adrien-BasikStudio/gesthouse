@@ -34,14 +34,14 @@ export default function OnboardingPage() {
     <main className="flex min-h-screen items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🎉</div>
-          <CardTitle>Bienvenue sur GestHome</CardTitle>
-          <CardDescription>Créez votre foyer pour commencer</CardDescription>
+          <div className="text-4xl mb-2">🐜</div>
+          <CardTitle>Bienvenue dans la fourmilière !</CardTitle>
+          <CardDescription>Donne un nom à ton foyer pour commencer</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">Nom du foyer</Label>
+              <Label htmlFor="name">Nom de la fourmilière</Label>
               <Input
                 id="name"
                 name="name"
@@ -63,7 +63,7 @@ export default function OnboardingPage() {
                     onClick={() => setEmoji(e)}
                     className={`text-2xl p-2 rounded-lg transition-colors ${
                       emoji === e
-                        ? 'bg-primary/10 ring-2 ring-primary'
+                        ? 'bg-primary/15 ring-2 ring-primary'
                         : 'hover:bg-muted'
                     }`}
                   >
@@ -74,7 +74,7 @@ export default function OnboardingPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading || !name.trim()}>
-              {loading ? 'Création en cours...' : `Créer ${emoji} ${name || 'mon foyer'}`}
+              {loading ? 'Création en cours...' : `Créer ${emoji} ${name || 'ma fourmilière'}`}
             </Button>
           </form>
         </CardContent>

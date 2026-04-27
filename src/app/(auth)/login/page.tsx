@@ -21,9 +21,7 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
 
     setLoading(false)
@@ -42,14 +40,14 @@ export default function LoginPage() {
         <Card className="w-full max-w-sm text-center">
           <CardHeader>
             <div className="text-4xl mb-2">📬</div>
-            <CardTitle>Vérifiez votre email</CardTitle>
+            <CardTitle>Vérifie ton email</CardTitle>
             <CardDescription>
-              Un lien de connexion a été envoyé à <strong>{email}</strong>
+              On a envoyé un lien magique à <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Cliquez sur le lien dans l&apos;email pour vous connecter. Vous pouvez fermer cette page.
+              Clique sur le lien pour rejoindre la fourmilière. Tu peux fermer cette page.
             </p>
           </CardContent>
         </Card>
@@ -61,9 +59,9 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🏠</div>
-          <CardTitle>Connexion</CardTitle>
-          <CardDescription>Recevez un lien de connexion par email</CardDescription>
+          <div className="text-4xl mb-2">🐜</div>
+          <CardTitle>Content de te revoir !</CardTitle>
+          <CardDescription>On t&apos;envoie un lien de connexion par email</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -72,7 +70,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="votre@email.fr"
+                placeholder="ton@email.fr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -80,14 +78,14 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Envoi en cours...' : 'Recevoir le lien de connexion'}
+              {loading ? 'Envoi en cours...' : 'Recevoir le lien magique'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Pas encore de compte ?{' '}
+            Pas encore là ?{' '}
             <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">
-              Créer un compte
+              Rejoindre la fourmilière
             </Link>
           </p>
         </CardContent>

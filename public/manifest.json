@@ -1,11 +1,11 @@
 {
-  "name": "GestHome",
-  "short_name": "GestHome",
-  "description": "Le cerveau de votre foyer",
+  "name": "Les Fourmis",
+  "short_name": "Les Fourmis",
+  "description": "Le cerveau partagé de votre foyer",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#FAFAF7",
+  "theme_color": "#E8923C",
   "orientation": "portrait",
   "icons": [
     {

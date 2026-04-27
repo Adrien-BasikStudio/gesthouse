@@ -23,9 +23,7 @@ export default function SignupPage() {
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          full_name: email.split('@')[0],
-        },
+        data: { full_name: email.split('@')[0] },
       },
     })
 
@@ -45,14 +43,14 @@ export default function SignupPage() {
         <Card className="w-full max-w-sm text-center">
           <CardHeader>
             <div className="text-4xl mb-2">📬</div>
-            <CardTitle>Vérifiez votre email</CardTitle>
+            <CardTitle>Plus qu&apos;une étape !</CardTitle>
             <CardDescription>
-              Un lien de confirmation a été envoyé à <strong>{email}</strong>
+              Confirme ton email : on a envoyé un lien à <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Cliquez sur le lien dans l&apos;email pour activer votre compte.
+              Clique sur le lien pour activer ton compte et créer ta fourmilière. 🐜
             </p>
           </CardContent>
         </Card>
@@ -64,9 +62,9 @@ export default function SignupPage() {
     <main className="flex min-h-screen items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🏠</div>
-          <CardTitle>Créer un compte</CardTitle>
-          <CardDescription>Gratuit, sans carte bancaire</CardDescription>
+          <div className="text-4xl mb-2">🐜</div>
+          <CardTitle>Rejoins la fourmilière</CardTitle>
+          <CardDescription>Gratuit · Sans carte bancaire · 2 min chrono</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -75,7 +73,7 @@ export default function SignupPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="votre@email.fr"
+                placeholder="ton@email.fr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -83,12 +81,12 @@ export default function SignupPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Envoi en cours...' : 'Créer mon compte'}
+              {loading ? 'Envoi en cours...' : 'Je veux y être 🐜'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Déjà un compte ?{' '}
+            Déjà une ouvrière ?{' '}
             <Link href="/login" className="underline underline-offset-4 hover:text-foreground">
               Se connecter
             </Link>

@@ -1,28 +1,34 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist } from 'next/font/google'
+import { Inter, Fraunces } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
 })
 
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+})
+
 export const metadata: Metadata = {
-  title: 'GestHome — Le cerveau de votre foyer',
-  description: 'Gérez tâches, calendrier, courses, recettes, stock et dépenses partagées en famille.',
+  title: 'Les Fourmis — Le cerveau partagé de votre foyer',
+  description: 'Tâches, courses, recettes, stock et comptes partagés. Une seule app pour organiser votre foyer comme une fourmilière.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'GestHome',
+    title: 'Les Fourmis',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#E8923C',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -38,7 +44,7 @@ export default async function RootLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} className={`${geistSans.variable} h-full antialiased`}>
+    <html lang={locale} className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <NextIntlClientProvider messages={messages}>
           {children}
