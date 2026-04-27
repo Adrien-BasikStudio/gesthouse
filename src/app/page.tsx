@@ -58,9 +58,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Gratuit pour 2 membres · Aucune carte bancaire requise
-          </p>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Essai 30 jours gratuit · Aucune carte bancaire requise
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Ensuite dès 5,99 €/mois · Code <span className="font-medium text-amber-600">EARLY100</span> = -25% à vie
+            </p>
+          </div>
         </div>
 
       </div>
