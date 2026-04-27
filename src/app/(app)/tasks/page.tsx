@@ -96,6 +96,7 @@ export default async function TasksPage() {
           <TaskListRealtime
             initialTasks={todayTasks ?? []}
             householdId={householdId}
+            channelSuffix="today"
           />
         </TabsContent>
 
@@ -103,6 +104,7 @@ export default async function TasksPage() {
           <TaskListRealtime
             initialTasks={weekTasks ?? []}
             householdId={householdId}
+            channelSuffix="week"
           />
         </TabsContent>
 
@@ -110,6 +112,7 @@ export default async function TasksPage() {
           <TaskListRealtime
             initialTasks={historyTasks ?? []}
             householdId={householdId}
+            channelSuffix="history"
           />
         </TabsContent>
       </Tabs>

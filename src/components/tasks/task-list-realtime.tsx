@@ -19,9 +19,11 @@ type Task = {
 export default function TaskListRealtime({
   initialTasks,
   householdId,
+  channelSuffix = 'default',
 }: {
   initialTasks: Task[]
   householdId: string
+  channelSuffix?: string
 }) {
   const router = useRouter()
   const [tasks, setTasks] = useState(initialTasks)
@@ -33,7 +35,7 @@ export default function TaskListRealtime({
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
-      .channel('tasks-realtime')
+      .channel(`tasks-realtime-${channelSuffix}`)
       .on(
         'postgres_changes',
         {
