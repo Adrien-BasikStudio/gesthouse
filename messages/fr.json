@@ -1,0 +1,81 @@
+{
+  "app": {
+    "name": "GestHome"
+  },
+  "nav": {
+    "tasks": "Tâches",
+    "calendar": "Calendrier",
+    "shopping": "Courses",
+    "recipes": "Recettes",
+    "meals": "Menus",
+    "stock": "Stock",
+    "expenses": "Dépenses",
+    "settings": "Paramètres"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "signup": "Créer un compte",
+    "logout": "Se déconnecter",
+    "email": "Email",
+    "emailPlaceholder": "votre@email.fr",
+    "sendMagicLink": "Recevoir un lien de connexion",
+    "checkEmail": "Vérifiez votre email",
+    "checkEmailDescription": "Un lien de connexion vous a été envoyé.",
+    "continueWithGoogle": "Continuer avec Google",
+    "noAccount": "Pas encore de compte ?",
+    "alreadyAccount": "Déjà un compte ?",
+    "createAccount": "Créer un compte"
+  },
+  "onboarding": {
+    "title": "Bienvenue sur GestHome",
+    "subtitle": "Créez votre foyer pour commencer",
+    "householdName": "Nom du foyer",
+    "householdNamePlaceholder": "Famille Martin",
+    "emoji": "Emoji",
+    "create": "Créer mon foyer",
+    "creating": "Création en cours..."
+  },
+  "tasks": {
+    "title": "Tâches",
+    "add": "Ajouter une tâche",
+    "empty": "Aucune tâche pour aujourd'hui",
+    "today": "Aujourd'hui",
+    "thisWeek": "Cette semaine",
+    "byMember": "Par membre",
+    "history": "Historique",
+    "complete": "Terminer",
+    "delete": "Supprimer"
+  },
+  "expenses": {
+    "title": "Dépenses",
+    "add": "Ajouter une dépense",
+    "balances": "Soldes",
+    "youOwe": "Tu dois",
+    "owesYou": "te doit",
+    "settle": "Régler",
+    "categories": {
+      "groceries": "Courses",
+      "restaurant": "Restaurant",
+      "rent": "Loyer/charges",
+      "entertainment": "Sorties",
+      "travel": "Voyages",
+      "car": "Auto",
+      "health": "Santé",
+      "gifts": "Cadeaux",
+      "other": "Divers"
+    }
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "success": "Enregistré",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "by": "par",
+    "on": "le"
+  }
+}
