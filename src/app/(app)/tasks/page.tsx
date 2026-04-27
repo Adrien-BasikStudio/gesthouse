@@ -39,19 +39,15 @@ export default async function TasksPage() {
 
   const now = new Date()
 
-  // Tâches du jour : sans date (toujours visibles), dues aujourd'hui/en retard, ou complétées aujourd'hui
+  // Aujourd'hui : toutes les tâches non complétées + complétées aujourd'hui
   const { data: todayTasks } = await supabase
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
     .eq('household_id', householdId)
-    .or(
-      `due_at.is.null,` +
-      `and(due_at.lte.${endOfDay(now).toISOString()},completed_at.is.null),` +
-      `and(completed_at.gte.${startOfDay(now).toISOString()},completed_at.lte.${endOfDay(now).toISOString()})`
-    )
+    .or(`completed_at.is.null,completed_at.gte.${startOfDay(now).toISOString()}`)
     .order('due_at', { ascending: true, nullsFirst: false })
 
-  // Tâches de la semaine
+  // Semaine : tâches avec une date dans la semaine courante
   const { data: weekTasks } = await supabase
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
@@ -60,7 +56,7 @@ export default async function TasksPage() {
     .lte('due_at', endOfWeek(now, { locale: fr }).toISOString())
     .order('due_at', { ascending: true })
 
-  // Historique (complétées, hors aujourd'hui)
+  // Historique : complétées avant aujourd'hui
   const { data: historyTasks } = await supabase
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
