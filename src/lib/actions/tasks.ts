@@ -24,9 +24,9 @@ export async function createTask(formData: FormData) {
   const parsed = createTaskSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description') || undefined,
-    assigned_to: formData.get('assigned_to') || null,
+    assigned_to: (() => { const v = formData.get('assigned_to'); return (!v || v === 'none') ? null : String(v) })(),
     due_at: formData.get('due_at') || null,
-    recurrence_rule: formData.get('recurrence_rule') || null,
+    recurrence_rule: (() => { const v = formData.get('recurrence_rule'); return (!v || v === 'none') ? null : String(v) })(),
     household_id: formData.get('household_id'),
   })
 

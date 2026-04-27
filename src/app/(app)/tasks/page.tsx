@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -29,20 +30,22 @@ export default async function TasksPage() {
   const householdId = membership.household_id
   const household = membership.households as unknown as { name: string; emoji: string } | null
 
-  // Membres du foyer pour l'assignation
-  const { data: members } = await supabase
+  // Membres du foyer pour l'assignation (admin client pour bypasser la RLS sur profiles)
+  const admin = createAdminClient()
+  const { data: members } = await admin
     .from('household_members')
     .select('user_id, profiles(display_name)')
     .eq('household_id', householdId)
 
   const now = new Date()
 
-  // Tâches du jour (dues aujourd'hui ou en retard, non complétées + complétées aujourd'hui)
+  // Tâches du jour : sans date (toujours visibles), dues aujourd'hui/en retard, ou complétées aujourd'hui
   const { data: todayTasks } = await supabase
     .from('tasks')
     .select('*, profiles:assigned_to(display_name)')
     .eq('household_id', householdId)
     .or(
+      `due_at.is.null,` +
       `and(due_at.lte.${endOfDay(now).toISOString()},completed_at.is.null),` +
       `and(completed_at.gte.${startOfDay(now).toISOString()},completed_at.lte.${endOfDay(now).toISOString()})`
     )
