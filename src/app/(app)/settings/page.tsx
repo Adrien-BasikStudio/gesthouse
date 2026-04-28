@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getActiveHouseholdId } from '@/lib/active-household'
 import MembersList from '@/components/settings/members-list'
 import InviteButton from '@/components/settings/invite-button'
 import LogoutButton from '@/components/settings/logout-button'
+import HouseholdSwitcher from '@/components/settings/household-switcher'
 import { Badge } from '@/components/ui/badge'
 
 export default async function SettingsPage() {
@@ -11,14 +13,15 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: membership } = await supabase
+  const { data: allMemberships } = await supabase
     .from('household_members')
     .select('household_id, role, households(name, emoji, plan)')
     .eq('user_id', user.id)
-    .limit(1)
-    .single()
 
-  if (!membership) redirect('/onboarding')
+  if (!allMemberships || allMemberships.length === 0) redirect('/onboarding')
+
+  const activeId = await getActiveHouseholdId(allMemberships)
+  const membership = allMemberships.find(m => m.household_id === activeId) ?? allMemberships[0]
 
   const householdId = membership.household_id
   const household = membership.households as unknown as { name: string; emoji: string; plan: string }
@@ -60,6 +63,16 @@ export default async function SettingsPage() {
             {members?.length ?? 0} membre{(members?.length ?? 0) > 1 ? 's' : ''}
           </p>
         </div>
+
+        {/* Switcher si plusieurs foyers ou option rejoindre */}
+        <HouseholdSwitcher
+          households={allMemberships.map(m => ({
+            household_id: m.household_id,
+            name: (m.households as unknown as { name: string; emoji: string }).name,
+            emoji: (m.households as unknown as { name: string; emoji: string }).emoji,
+          }))}
+          activeId={activeId ?? membership.household_id}
+        />
       </section>
 
       <section className="space-y-3">

@@ -111,6 +111,14 @@ export async function acceptInvite(token: string) {
   redirect('/tasks')
 }
 
+export async function switchHousehold(householdId: string) {
+  const { cookies } = await import('next/headers')
+  const store = await cookies()
+  store.set('fourmis_household', householdId, { path: '/', maxAge: 60 * 60 * 24 * 365 })
+  revalidatePath('/')
+  redirect('/tasks')
+}
+
 export async function removeMember(householdId: string, userId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

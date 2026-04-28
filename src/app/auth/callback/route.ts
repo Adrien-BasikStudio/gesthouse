@@ -11,9 +11,12 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Vérifie si l'utilisateur a déjà un foyer
-      const { data: { user } } = await supabase.auth.getUser()
+      // If next is an invite link, go there directly — the invite page handles the rest
+      if (next.startsWith('/invite/')) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
 
+      const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: membership } = await supabase
           .from('household_members')
