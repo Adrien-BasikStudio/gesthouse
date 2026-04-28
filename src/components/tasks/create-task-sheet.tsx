@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 
 type Member = { user_id: string; profiles: { display_name: string } | null }
+type Group = { id: string; name: string; emoji: string | null; color: string }
 
 const RECURRENCE_OPTIONS = [
   { value: '', label: 'Pas de répétition' },
@@ -22,14 +23,17 @@ const RECURRENCE_OPTIONS = [
 export default function CreateTaskSheet({
   householdId,
   members,
+  groups = [],
 }: {
   householdId: string
   members: Member[]
+  groups?: Group[]
 }) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [assignedTo, setAssignedTo] = useState<string | null>(null)
   const [recurrence, setRecurrence] = useState<string | null>(null)
+  const [groupId, setGroupId] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -37,6 +41,7 @@ export default function CreateTaskSheet({
     formData.set('household_id', householdId)
     formData.set('assigned_to', assignedTo ?? '')
     formData.set('recurrence_rule', recurrence ?? '')
+    if (groupId && groupId !== 'none') formData.set('group_id', groupId)
 
     startTransition(async () => {
       const result = await createTask(formData)
@@ -47,6 +52,7 @@ export default function CreateTaskSheet({
         setOpen(false)
         setAssignedTo(null)
         setRecurrence(null)
+        setGroupId(null)
         ;(e.target as HTMLFormElement).reset()
       }
     })
@@ -110,6 +116,32 @@ export default function CreateTaskSheet({
                 />
               </div>
             </div>
+
+            {groups.length > 0 && (
+              <div className="space-y-2">
+                <Label>Groupe</Label>
+                <Select value={groupId} onValueChange={v => setGroupId(v)}>
+                  <SelectTrigger>
+                    <SelectValue>
+                      {groupId && groupId !== 'none'
+                        ? (() => {
+                            const g = groups.find(g => g.id === groupId)
+                            return g ? `${g.emoji ? g.emoji + ' ' : ''}${g.name}` : 'Groupe'
+                          })()
+                        : <span className="text-muted-foreground">Aucun groupe</span>}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun groupe</SelectItem>
+                    {groups.map(g => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.emoji ? `${g.emoji} ` : ''}{g.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Répétition</Label>

@@ -3,9 +3,10 @@
 import { useTransition } from 'react'
 import { format, isToday, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { MapPin, Trash2, Clock } from 'lucide-react'
+import { MapPin, Trash2, Clock, CheckSquare } from 'lucide-react'
 import { deleteEvent } from '@/lib/actions/calendar'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 type Event = {
   id: string
@@ -18,16 +19,27 @@ type Event = {
   attendee_ids: string[] | null
 }
 
+type Task = {
+  id: string
+  title: string
+  due_at: string | null
+  assigned_to: string | null
+  group_id: string | null
+  household_groups: { name: string; color: string; emoji: string | null } | null
+}
+
 type MemberMap = Record<string, string>
 
 export default function WeekView({
   days,
   events,
+  tasks = [],
   memberMap,
   currentUserId,
 }: {
   days: Date[]
   events: Event[]
+  tasks?: Task[]
   memberMap: MemberMap
   currentUserId: string
 }) {
@@ -44,6 +56,7 @@ export default function WeekView({
     <div className="space-y-1 pb-24">
       {days.map(day => {
         const dayEvents = events.filter(e => isSameDay(new Date(e.starts_at), day))
+        const dayTasks = tasks.filter(t => t.due_at && isSameDay(new Date(t.due_at), day))
         const isCurrentDay = isToday(day)
 
         return (
@@ -60,7 +73,7 @@ export default function WeekView({
                   {format(day, 'd')}
                 </span>
               </div>
-              {dayEvents.length === 0 && (
+              {dayEvents.length === 0 && dayTasks.length === 0 && (
                 <span className="text-xs text-muted-foreground/50">Rien de prévu</span>
               )}
             </div>
@@ -116,6 +129,26 @@ export default function WeekView({
                 </div>
               )
             })}
+
+            {/* Tasks */}
+            {dayTasks.map(task => (
+              <Link
+                key={task.id}
+                href="/tasks"
+                className="mx-4 mb-1.5 flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/60 border border-dashed hover:bg-secondary transition-colors"
+              >
+                <CheckSquare className="size-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-foreground/80 flex-1 min-w-0 truncate">{task.title}</span>
+                {task.household_groups && (
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded-full text-white shrink-0"
+                    style={{ background: task.household_groups.color }}
+                  >
+                    {task.household_groups.emoji ?? ''}{task.household_groups.name}
+                  </span>
+                )}
+              </Link>
+            ))}
           </div>
         )
       })}

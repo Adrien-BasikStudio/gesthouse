@@ -14,14 +14,19 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import WeekView from '@/components/calendar/week-view'
 import MonthView from '@/components/calendar/month-view'
 import AddEventSheet from '@/components/calendar/add-event-sheet'
+import { Suspense } from 'react'
+import FilterChips from '@/components/tasks/filter-chips'
 
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; offset?: string }>
+  searchParams: Promise<{ view?: string; offset?: string; members?: string; groups?: string; tasks?: string }>
 }) {
-  const { view = 'week', offset = '0' } = await searchParams
+  const { view = 'week', offset = '0', members: membersParam = '', groups: groupsParam = '', tasks: tasksParam } = await searchParams
   const off = parseInt(offset) || 0
+  const activeMembers = membersParam.split(',').filter(Boolean)
+  const activeGroups = groupsParam.split(',').filter(Boolean)
+  const showTasks = tasksParam === '1'
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,10 +42,17 @@ export default async function CalendarPage({
   const householdId = (await getActiveHouseholdId(memberships))!
   const admin = createAdminClient()
 
-  const { data: members } = await admin
-    .from('household_members')
-    .select('user_id, profiles(display_name)')
-    .eq('household_id', householdId)
+  const [{ data: members }, { data: groups }] = await Promise.all([
+    admin
+      .from('household_members')
+      .select('user_id, profiles(display_name)')
+      .eq('household_id', householdId),
+    admin
+      .from('household_groups')
+      .select('id, name, emoji, color')
+      .eq('household_id', householdId)
+      .order('created_at', { ascending: true }),
+  ])
 
   const memberMap: Record<string, string> = {}
   for (const m of members ?? []) {
@@ -52,6 +64,9 @@ export default async function CalendarPage({
     display_name: memberMap[m.user_id] ?? 'Membre',
   }))
 
+  const membersForFilter = membersForSheet
+  const groupsForFilter = groups ?? []
+
   const now = new Date()
   let days: Date[]
   let rangeStart: Date
@@ -61,12 +76,9 @@ export default async function CalendarPage({
   let nextHref: string
 
   if (view === 'month') {
-    const baseMonth = off >= 0
-      ? addMonths(now, off)
-      : subMonths(now, -off)
+    const baseMonth = off >= 0 ? addMonths(now, off) : subMonths(now, -off)
     rangeStart = startOfMonth(baseMonth)
     rangeEnd = endOfMonth(baseMonth)
-    // Pad to full weeks
     const gridStart = startOfWeek(rangeStart, { locale: fr })
     const gridEnd = endOfWeek(rangeEnd, { locale: fr })
     days = eachDayOfInterval({ start: gridStart, end: gridEnd })
@@ -74,9 +86,7 @@ export default async function CalendarPage({
     prevHref = `/calendar?view=month&offset=${off - 1}`
     nextHref = `/calendar?view=month&offset=${off + 1}`
   } else {
-    const baseWeek = off >= 0
-      ? addWeeks(now, off)
-      : subWeeks(now, -off)
+    const baseWeek = off >= 0 ? addWeeks(now, off) : subWeeks(now, -off)
     rangeStart = startOfWeek(baseWeek, { locale: fr })
     rangeEnd = endOfWeek(baseWeek, { locale: fr })
     days = eachDayOfInterval({ start: rangeStart, end: rangeEnd })
@@ -87,15 +97,52 @@ export default async function CalendarPage({
     nextHref = `/calendar?view=week&offset=${off + 1}`
   }
 
-  const { data: events } = await admin
+  // Build event query
+  let eventsQuery = admin
     .from('events')
-    .select('id, title, starts_at, ends_at, all_day, location, color, attendee_ids')
+    .select('id, title, starts_at, ends_at, all_day, location, color, attendee_ids, group_id')
     .eq('household_id', householdId)
     .gte('starts_at', rangeStart.toISOString())
     .lte('starts_at', rangeEnd.toISOString())
     .order('starts_at', { ascending: true })
 
+  if (activeMembers.length > 0) {
+    eventsQuery = eventsQuery.overlaps('attendee_ids', activeMembers)
+  }
+  if (activeGroups.length > 0) {
+    eventsQuery = eventsQuery.in('group_id', activeGroups)
+  }
+
+  // Build tasks query (for calendar display)
+  const rangeStartDate = format(rangeStart, 'yyyy-MM-dd')
+  const rangeEndDate = format(rangeEnd, 'yyyy-MM-dd')
+
+  let tasksQuery = admin
+    .from('tasks')
+    .select('id, title, due_at, completed_at, assigned_to, group_id, household_groups:group_id(name, color, emoji)')
+    .eq('household_id', householdId)
+    .not('due_at', 'is', null)
+    .gte('due_at', rangeStart.toISOString())
+    .lte('due_at', rangeEnd.toISOString())
+    .is('completed_at', null)
+    .order('due_at', { ascending: true })
+
+  if (activeMembers.length > 0) {
+    tasksQuery = tasksQuery.in('assigned_to', activeMembers)
+  }
+  if (activeGroups.length > 0) {
+    tasksQuery = tasksQuery.in('group_id', activeGroups)
+  }
+
+  const [{ data: events }, { data: tasks }] = await Promise.all([
+    eventsQuery,
+    showTasks ? tasksQuery : Promise.resolve({ data: [] }),
+  ])
+
   const today = format(now, 'yyyy-MM-dd')
+
+  // Build filter URL base (preserve view + offset)
+  const filterBase = `/calendar?view=${view}&offset=${offset}`
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto w-full">
@@ -130,6 +177,15 @@ export default async function CalendarPage({
             Mois
           </Link>
         </div>
+
+        {/* Filters */}
+        <Suspense>
+          <FilterChips
+            members={membersForFilter.length > 1 ? membersForFilter : []}
+            groups={groupsForFilter}
+            showTasksToggle
+          />
+        </Suspense>
       </div>
 
       {/* Calendar */}
@@ -138,6 +194,12 @@ export default async function CalendarPage({
           <WeekView
             days={days}
             events={events ?? []}
+            tasks={showTasks ? (tasks ?? []).map(t => ({
+              ...t,
+              household_groups: Array.isArray(t.household_groups)
+                ? (t.household_groups[0] ?? null)
+                : t.household_groups as { name: string; color: string; emoji: string | null } | null,
+            })) : []}
             memberMap={memberMap}
             currentUserId={user.id}
           />
@@ -145,9 +207,7 @@ export default async function CalendarPage({
           <MonthView
             days={days}
             events={events ?? []}
-            currentMonth={view === 'month'
-              ? addMonths(now, off)
-              : now}
+            currentMonth={view === 'month' ? addMonths(now, off) : now}
           />
         )}
       </div>

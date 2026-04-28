@@ -6,6 +6,7 @@ import MembersList from '@/components/settings/members-list'
 import InviteButton from '@/components/settings/invite-button'
 import LogoutButton from '@/components/settings/logout-button'
 import HouseholdSwitcher from '@/components/settings/household-switcher'
+import GroupsManager from '@/components/settings/groups-manager'
 import { Badge } from '@/components/ui/badge'
 
 export default async function SettingsPage() {
@@ -39,6 +40,12 @@ export default async function SettingsPage() {
     .select('display_name')
     .eq('id', user.id)
     .single()
+
+  const { data: groups } = await admin
+    .from('household_groups')
+    .select('id, name, emoji, color, group_members(user_id)')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: true })
 
   return (
     <div className="p-4 space-y-6 pb-20">
@@ -91,6 +98,26 @@ export default async function SettingsPage() {
           currentUserId={user.id}
           householdId={householdId}
           isAdmin={isAdmin}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+          Groupes
+        </h2>
+        <GroupsManager
+          householdId={householdId}
+          initialGroups={(groups ?? []).map(g => ({
+            id: g.id,
+            name: g.name,
+            emoji: g.emoji,
+            color: g.color,
+            member_ids: (g.group_members as unknown as { user_id: string }[]).map(gm => gm.user_id),
+          }))}
+          members={(members ?? []).map(m => ({
+            user_id: m.user_id,
+            display_name: (m.profiles as unknown as { display_name: string } | null)?.display_name ?? 'Membre',
+          }))}
         />
       </section>
 

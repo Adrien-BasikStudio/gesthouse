@@ -32,9 +32,12 @@ export async function createTask(formData: FormData) {
 
   if (!parsed.success) return { error: 'Données invalides' }
 
+  const groupId = (() => { const v = formData.get('group_id'); return (!v || v === 'none') ? null : String(v) })()
+
   const admin = createAdminClient()
   const { error } = await admin.from('tasks').insert({
     ...parsed.data,
+    group_id: groupId,
     created_by: user.id,
   })
 
