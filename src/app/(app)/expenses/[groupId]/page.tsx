@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getActiveHouseholdId } from '@/lib/active-household'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -19,16 +20,15 @@ export default async function ExpenseGroupPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: membership } = await supabase
+  const { data: memberships } = await supabase
     .from('household_members')
     .select('household_id, role')
     .eq('user_id', user.id)
-    .limit(1)
-    .single()
 
-  if (!membership) redirect('/onboarding')
+  if (!memberships || memberships.length === 0) redirect('/onboarding')
 
-  const householdId = membership.household_id
+  const householdId = (await getActiveHouseholdId(memberships))!
+  const membership = memberships.find(m => m.household_id === householdId) ?? memberships[0]
   const isAdmin = membership.role === 'admin'
   const admin = createAdminClient()
 

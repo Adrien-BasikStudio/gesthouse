@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getActiveHouseholdId } from '@/lib/active-household'
 import { redirect } from 'next/navigation'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -18,16 +19,15 @@ export default async function TasksPage() {
     .eq('id', user.id)
     .single()
 
-  const { data: membership } = await supabase
+  const { data: memberships } = await supabase
     .from('household_members')
     .select('household_id, role, households(name, emoji)')
     .eq('user_id', user.id)
-    .limit(1)
-    .single()
 
-  if (!membership) redirect('/onboarding')
+  if (!memberships || memberships.length === 0) redirect('/onboarding')
 
-  const householdId = membership.household_id
+  const householdId = (await getActiveHouseholdId(memberships))!
+  const membership = memberships.find(m => m.household_id === householdId) ?? memberships[0]
   const household = membership.households as unknown as { name: string; emoji: string } | null
 
   // Membres du foyer pour l'assignation (admin client pour bypasser la RLS sur profiles)

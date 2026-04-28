@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getActiveHouseholdId } from '@/lib/active-household'
 import { redirect } from 'next/navigation'
 import { createExpenseGroup } from '@/lib/actions/expenses'
 import { buttonVariants } from '@/components/ui/button'
@@ -10,16 +11,14 @@ export default async function ExpensesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: membership } = await supabase
+  const { data: memberships } = await supabase
     .from('household_members')
     .select('household_id')
     .eq('user_id', user.id)
-    .limit(1)
-    .single()
 
-  if (!membership) redirect('/onboarding')
+  if (!memberships || memberships.length === 0) redirect('/onboarding')
 
-  const householdId = membership.household_id
+  const householdId = (await getActiveHouseholdId(memberships))!
   const admin = createAdminClient()
 
   const { data: groups } = await admin
