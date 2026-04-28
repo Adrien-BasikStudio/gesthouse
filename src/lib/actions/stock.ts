@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { sendPushToHousehold } from '@/lib/push'
+import { differenceInDays, parseISO } from 'date-fns'
 
 export async function addStockItem(formData: FormData) {
   const supabase = await createClient()
@@ -25,6 +27,21 @@ export async function addStockItem(formData: FormData) {
   })
 
   if (error) return { error: error.message }
+
+  // Alert if expires within 3 days
+  const expiresOn = formData.get('expires_on') ? String(formData.get('expires_on')) : null
+  if (expiresOn) {
+    const days = differenceInDays(parseISO(expiresOn), new Date())
+    if (days <= 3 && days >= 0) {
+      const name = String(formData.get('name') ?? '')
+      await sendPushToHousehold(String(formData.get('household_id')), {
+        title: 'Article bientôt périmé',
+        body: `${name} expire dans ${days === 0 ? "aujourd'hui" : `${days} jour${days > 1 ? 's' : ''}`}`,
+        url: '/stock',
+      })
+    }
+  }
+
   revalidatePath('/stock')
   return { success: true }
 }

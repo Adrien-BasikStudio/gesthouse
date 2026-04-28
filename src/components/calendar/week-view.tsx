@@ -7,6 +7,7 @@ import { MapPin, Trash2, Clock, CheckSquare } from 'lucide-react'
 import { deleteEvent } from '@/lib/actions/calendar'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type Event = {
   id: string
@@ -44,6 +45,16 @@ export default function WeekView({
   currentUserId: string
 }) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  function handleDayClick(day: Date) {
+    const date = format(day, 'yyyy-MM-dd')
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('new', date)
+    params.delete('tasks') // don't carry tasks param into new event flow
+    router.push(`/calendar?${params.toString()}`)
+  }
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -62,19 +73,24 @@ export default function WeekView({
         return (
           <div key={day.toISOString()}>
             {/* Day header */}
-            <div className={`flex items-center gap-3 px-4 py-2 sticky top-0 bg-background z-10 ${isCurrentDay ? '' : ''}`}>
-              <div className={`flex flex-col items-center size-10 rounded-full justify-center shrink-0 ${
-                isCurrentDay ? 'bg-primary text-primary-foreground' : ''
-              }`}>
+            <div className={`flex items-center gap-3 px-4 py-2 sticky top-0 bg-background z-10`}>
+              <button
+                onClick={() => handleDayClick(day)}
+                className={`flex flex-col items-center size-10 rounded-full justify-center shrink-0 transition-colors hover:bg-secondary ${
+                  isCurrentDay ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''
+                }`}
+              >
                 <span className={`text-xs font-medium uppercase ${isCurrentDay ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                   {format(day, 'EEE', { locale: fr })}
                 </span>
                 <span className={`text-sm font-bold leading-none ${isCurrentDay ? 'text-primary-foreground' : ''}`}>
                   {format(day, 'd')}
                 </span>
-              </div>
-              {dayEvents.length === 0 && dayTasks.length === 0 && (
+              </button>
+              {dayEvents.length === 0 && dayTasks.length === 0 ? (
                 <span className="text-xs text-muted-foreground/50">Rien de prévu</span>
+              ) : (
+                <span className="text-xs text-muted-foreground/30 ml-auto">+ Ajouter</span>
               )}
             </div>
 

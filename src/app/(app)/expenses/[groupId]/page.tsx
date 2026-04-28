@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ExpenseRow from '@/components/expenses/expense-row'
 import BalancesView from '@/components/expenses/balances-view'
 import AddExpenseSheet from '@/components/expenses/add-expense-sheet'
+import ExportCsvButton from '@/components/expenses/export-csv-button'
 import type { BalanceEntry } from '@/lib/expenses'
 
 export default async function ExpenseGroupPage({
@@ -109,6 +110,7 @@ export default async function ExpenseGroupPage({
         <TabsList className="mx-4 mb-1">
           <TabsTrigger value="expenses" className="flex-1">Dépenses</TabsTrigger>
           <TabsTrigger value="balances" className="flex-1">Soldes</TabsTrigger>
+          <ExportCsvButton expenses={(expenses ?? []) as never} groupName={currentGroup.name} />
         </TabsList>
 
         <TabsContent value="expenses" className="flex-1 px-4 overflow-y-auto pb-24">

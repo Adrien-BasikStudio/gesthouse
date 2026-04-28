@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { addDays, addWeeks, addMonths } from 'date-fns'
 import { z } from 'zod'
+import { sendPushToUser } from '@/lib/push'
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(200),
@@ -42,6 +43,15 @@ export async function createTask(formData: FormData) {
   })
 
   if (error) return { error: error.message }
+
+  // Notify assigned user if different from creator
+  if (parsed.data.assigned_to && parsed.data.assigned_to !== user.id) {
+    await sendPushToUser(parsed.data.assigned_to, {
+      title: 'Nouvelle tâche',
+      body: parsed.data.title,
+      url: '/tasks',
+    })
+  }
 
   revalidatePath('/tasks')
   return { success: true }

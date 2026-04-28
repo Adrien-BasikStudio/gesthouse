@@ -20,9 +20,9 @@ import FilterChips from '@/components/tasks/filter-chips'
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; offset?: string; members?: string; groups?: string; tasks?: string }>
+  searchParams: Promise<{ view?: string; offset?: string; members?: string; groups?: string; tasks?: string; new?: string }>
 }) {
-  const { view = 'week', offset = '0', members: membersParam = '', groups: groupsParam = '', tasks: tasksParam } = await searchParams
+  const { view = 'week', offset = '0', members: membersParam = '', groups: groupsParam = '', tasks: tasksParam, new: newDate } = await searchParams
   const off = parseInt(offset) || 0
   const activeMembers = membersParam.split(',').filter(Boolean)
   const activeGroups = groupsParam.split(',').filter(Boolean)
@@ -191,6 +191,7 @@ export default async function CalendarPage({
       {/* Calendar */}
       <div className="flex-1 overflow-y-auto">
         {view === 'week' ? (
+          <Suspense>
           <WeekView
             days={days}
             events={events ?? []}
@@ -203,6 +204,7 @@ export default async function CalendarPage({
             memberMap={memberMap}
             currentUserId={user.id}
           />
+          </Suspense>
         ) : (
           <MonthView
             days={days}
@@ -215,7 +217,8 @@ export default async function CalendarPage({
       <AddEventSheet
         householdId={householdId}
         members={membersForSheet}
-        defaultDate={today}
+        defaultDate={newDate ?? today}
+        initialOpen={!!newDate}
       />
     </div>
   )

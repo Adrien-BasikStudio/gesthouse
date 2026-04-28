@@ -1,17 +1,24 @@
 {
   "name": "Les Fourmis",
-  "short_name": "Les Fourmis",
+  "short_name": "Fourmis",
   "description": "Le cerveau partagé de votre foyer",
-  "start_url": "/",
+  "start_url": "/home",
   "display": "standalone",
   "background_color": "#FAFAF7",
   "theme_color": "#E8923C",
   "orientation": "portrait",
+  "categories": ["lifestyle", "productivity"],
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "Tâches", "url": "/tasks" },
+    { "name": "Courses", "url": "/shopping" },
+    { "name": "Recettes", "url": "/recipes" }
   ]
 }

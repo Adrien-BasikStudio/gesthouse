@@ -24,12 +24,14 @@ export default function AddEventSheet({
   householdId,
   members,
   defaultDate,
+  initialOpen = false,
 }: {
   householdId: string
   members: Member[]
   defaultDate?: string
+  initialOpen?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(initialOpen)
   const [isPending, startTransition] = useTransition()
   const [allDay, setAllDay] = useState(false)
   const [color, setColor] = useState(COLORS[0].value)

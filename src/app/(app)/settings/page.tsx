@@ -7,6 +7,7 @@ import InviteButton from '@/components/settings/invite-button'
 import LogoutButton from '@/components/settings/logout-button'
 import HouseholdSwitcher from '@/components/settings/household-switcher'
 import GroupsManager from '@/components/settings/groups-manager'
+import ProfileEditor from '@/components/settings/profile-editor'
 import { Badge } from '@/components/ui/badge'
 
 export default async function SettingsPage() {
@@ -51,8 +52,12 @@ export default async function SettingsPage() {
     <div className="p-4 space-y-6 pb-20">
       <div>
         <h1 className="text-2xl font-bold">Paramètres</h1>
-        <p className="text-muted-foreground text-sm">{profile?.display_name} · {user.email}</p>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Mon profil</h2>
+        <ProfileEditor displayName={profile?.display_name ?? ''} email={user.email ?? ''} />
+      </section>
 
       <section className="space-y-3">
         <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
