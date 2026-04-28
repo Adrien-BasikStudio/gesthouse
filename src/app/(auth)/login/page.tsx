@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,48 +12,28 @@ import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') ?? '/tasks'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     setLoading(false)
 
     if (error) {
-      toast.error(error.message)
+      toast.error('Email ou mot de passe incorrect')
       return
     }
 
-    setSent(true)
-  }
-
-  if (sent) {
-    return (
-      <main className="flex min-h-screen items-center justify-center p-6">
-        <Card className="w-full max-w-sm text-center">
-          <CardHeader>
-            <div className="text-4xl mb-2">📬</div>
-            <CardTitle>Vérifie ton email</CardTitle>
-            <CardDescription>
-              On a envoyé un lien magique à <strong>{email}</strong>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Clique sur le lien pour rejoindre la fourmilière. Tu peux fermer cette page.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    )
+    router.push(next)
+    router.refresh()
   }
 
   return (
@@ -61,7 +42,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="text-4xl mb-2">🐜</div>
           <CardTitle>Content de te revoir !</CardTitle>
-          <CardDescription>On t&apos;envoie un lien de connexion par email</CardDescription>
+          <CardDescription>Connecte-toi à ta fourmilière</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -70,22 +51,36 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="ton@email.fr"
+                placeholder="ton@email.ch"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
                 autoFocus
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+            </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Envoi en cours...' : 'Recevoir le lien magique'}
+              {loading ? 'Connexion...' : 'Se connecter'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
             Pas encore là ?{' '}
-            <Link href="/signup" className="underline underline-offset-4 hover:text-foreground">
-              Rejoindre la fourmilière
+            <Link
+              href={`/signup${next !== '/tasks' ? `?next=${encodeURIComponent(next)}` : ''}`}
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Créer un compte
             </Link>
           </p>
         </CardContent>
