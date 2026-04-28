@@ -8,6 +8,7 @@ import ShoppingListRealtime from '@/components/shopping/shopping-list-realtime'
 import AddItemInput from '@/components/shopping/add-item-input'
 import ListActionsMenu from '@/components/shopping/list-actions-menu'
 import CreateListButton from '@/components/shopping/create-list-button'
+import ShoppingStockNav from '@/components/shopping/shopping-stock-nav'
 
 export default async function ShoppingListPage({
   params,
@@ -61,6 +62,7 @@ export default async function ShoppingListPage({
     <div className="flex flex-col h-full max-w-2xl mx-auto w-full">
       {/* Header */}
       <div className="px-4 pt-6 pb-3 space-y-3">
+        <ShoppingStockNav shoppingHref={`/shopping/${listId}`} />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
             {lists && lists.length > 1 && lists.map(list => (

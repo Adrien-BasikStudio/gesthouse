@@ -65,7 +65,7 @@ export default function ShoppingListRealtime({
   return (
     <div className="space-y-2 py-2">
       {pending.map(item => (
-        <ShoppingItemRow key={item.id} item={item} />
+        <ShoppingItemRow key={item.id} item={item} householdId={householdId} />
       ))}
 
       {checked.length > 0 && !hideChecked && (
@@ -74,7 +74,7 @@ export default function ShoppingListRealtime({
             Dans le panier ({checked.length})
           </p>
           {checked.map(item => (
-            <ShoppingItemRow key={item.id} item={item} />
+            <ShoppingItemRow key={item.id} item={item} householdId={householdId} />
           ))}
         </div>
       )}

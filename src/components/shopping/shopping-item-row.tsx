@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Trash2 } from 'lucide-react'
 import { toggleItem, deleteItem } from '@/lib/actions/shopping'
 import { toast } from 'sonner'
+import AddToStockSheet from './add-to-stock-sheet'
 
 type Item = {
   id: string
@@ -14,7 +15,13 @@ type Item = {
   category: string | null
 }
 
-export default function ShoppingItemRow({ item }: { item: Item }) {
+export default function ShoppingItemRow({
+  item,
+  householdId,
+}: {
+  item: Item
+  householdId: string
+}) {
   const [isPending, startTransition] = useTransition()
   const [optimisticChecked, setOptimisticChecked] = useState(item.is_checked)
 
@@ -65,6 +72,13 @@ export default function ShoppingItemRow({ item }: { item: Item }) {
           </span>
         )}
       </div>
+
+      {optimisticChecked && (
+        <AddToStockSheet
+          item={{ name: item.name, quantity: item.quantity, unit: item.unit }}
+          householdId={householdId}
+        />
+      )}
 
       <button
         onClick={handleDelete}

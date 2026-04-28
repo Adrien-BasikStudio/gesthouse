@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CheckSquare, ShoppingCart, ChefHat, Package, CreditCard, Settings } from 'lucide-react'
+import { CheckSquare, Calendar, ShoppingCart, ChefHat, CreditCard, Settings } from 'lucide-react'
 
 const navItems = [
   { href: '/tasks', label: 'Tâches', icon: CheckSquare },
-  { href: '/shopping', label: 'Courses', icon: ShoppingCart },
+  { href: '/calendar', label: 'Agenda', icon: Calendar },
+  { href: '/shopping', label: 'Courses', icon: ShoppingCart, extra: ['/stock'] },
   { href: '/recipes', label: 'Recettes', icon: ChefHat, extra: ['/meals'] },
-  { href: '/stock', label: 'Stock', icon: Package },
   { href: '/expenses', label: 'Dépenses', icon: CreditCard },
   { href: '/settings', label: 'Foyer', icon: Settings },
 ]
@@ -29,7 +29,7 @@ export default function BottomNav() {
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Icon className={`size-[18px] ${active ? 'stroke-[2.5]' : ''}`} />
+              <Icon className={`size-5 ${active ? 'stroke-[2.5]' : ''}`} />
               <span className="text-[10px]">{label}</span>
             </Link>
           )

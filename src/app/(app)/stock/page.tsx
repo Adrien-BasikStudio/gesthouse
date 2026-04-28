@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { differenceInDays, parseISO } from 'date-fns'
 import StockItemRow from '@/components/stock/stock-item-row'
 import AddStockSheet from '@/components/stock/add-stock-sheet'
+import ShoppingStockNav from '@/components/shopping/shopping-stock-nav'
 
 const LOCATIONS = [
   { value: 'all', label: 'Tout', emoji: '📦' },
@@ -59,6 +60,7 @@ export default async function StockPage({
     <div className="flex flex-col h-full max-w-2xl mx-auto w-full">
       {/* Header */}
       <div className="px-4 pt-6 pb-3 space-y-3">
+        <ShoppingStockNav shoppingHref="/shopping" />
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Stock</h1>
           <span className="text-sm text-muted-foreground">{items?.length ?? 0} articles</span>
