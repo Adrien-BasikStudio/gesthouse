@@ -134,9 +134,16 @@ export default async function CalendarPage({
     tasksQuery = tasksQuery.in('group_id', activeGroups)
   }
 
-  const [{ data: events }, { data: tasks }] = await Promise.all([
+  const [{ data: events }, { data: tasks }, { data: meals }] = await Promise.all([
     eventsQuery,
     showTasks ? tasksQuery : Promise.resolve({ data: [] }),
+    admin
+      .from('meal_plans')
+      .select('id, recipe_id, custom_title, planned_for, meal_type, recipes(title)')
+      .eq('household_id', householdId)
+      .gte('planned_for', format(rangeStart, 'yyyy-MM-dd'))
+      .lte('planned_for', format(rangeEnd, 'yyyy-MM-dd'))
+      .order('planned_for', { ascending: true }),
   ])
 
   const today = format(now, 'yyyy-MM-dd')
@@ -201,6 +208,16 @@ export default async function CalendarPage({
                 ? (t.household_groups[0] ?? null)
                 : t.household_groups as { name: string; color: string; emoji: string | null } | null,
             })) : []}
+            meals={(meals ?? []).map(m => ({
+              id: m.id,
+              recipe_id: m.recipe_id,
+              custom_title: m.custom_title,
+              planned_for: m.planned_for,
+              meal_type: m.meal_type,
+              recipe_title: Array.isArray(m.recipes)
+                ? (m.recipes[0] as { title: string } | undefined)?.title ?? null
+                : (m.recipes as { title: string } | null)?.title ?? null,
+            }))}
             memberMap={memberMap}
             members={membersForSheet}
             currentUserId={user.id}

@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { format, isToday, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { MapPin, Pencil, Trash2, Clock, CheckSquare } from 'lucide-react'
+import { MapPin, Pencil, Trash2, Clock, CheckSquare, UtensilsCrossed } from 'lucide-react'
 import { deleteEvent, updateEvent } from '@/lib/actions/calendar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
@@ -32,6 +32,24 @@ type Task = {
   group_id: string | null
   household_groups: { name: string; color: string; emoji: string | null } | null
 }
+
+type MealPlan = {
+  id: string
+  recipe_id: string | null
+  custom_title: string | null
+  planned_for: string
+  meal_type: string | null
+  recipe_title: string | null
+}
+
+const MEAL_EMOJI: Record<string, string> = {
+  breakfast: '🥣',
+  lunch: '🍽️',
+  snack: '🍎',
+  dinner: '🌙',
+}
+
+const MEAL_ORDER = ['breakfast', 'lunch', 'snack', 'dinner']
 
 type MemberMap = Record<string, string>
 type Member = { user_id: string; display_name: string }
@@ -211,6 +229,7 @@ export default function WeekView({
   days,
   events,
   tasks = [],
+  meals = [],
   memberMap,
   members = [],
   currentUserId,
@@ -218,6 +237,7 @@ export default function WeekView({
   days: Date[]
   events: Event[]
   tasks?: Task[]
+  meals?: MealPlan[]
   memberMap: MemberMap
   members?: Member[]
   currentUserId: string
@@ -246,6 +266,9 @@ export default function WeekView({
       {days.map(day => {
         const dayEvents = events.filter(e => isSameDay(new Date(e.starts_at), day))
         const dayTasks = tasks.filter(t => t.due_at && isSameDay(new Date(t.due_at), day))
+        const dayMeals = meals
+          .filter(m => m.planned_for === format(day, 'yyyy-MM-dd'))
+          .sort((a, b) => MEAL_ORDER.indexOf(a.meal_type ?? 'dinner') - MEAL_ORDER.indexOf(b.meal_type ?? 'dinner'))
         const isCurrentDay = isToday(day)
 
         return (
@@ -265,7 +288,7 @@ export default function WeekView({
                   {format(day, 'd')}
                 </span>
               </button>
-              {dayEvents.length === 0 && dayTasks.length === 0 ? (
+              {dayEvents.length === 0 && dayTasks.length === 0 && dayMeals.length === 0 ? (
                 <span className="text-xs text-muted-foreground/50">Rien de prévu</span>
               ) : (
                 <span className="text-xs text-muted-foreground/30 ml-auto">+ Ajouter</span>
@@ -345,6 +368,23 @@ export default function WeekView({
                 )}
               </Link>
             ))}
+
+            {/* Meals */}
+            {dayMeals.length > 0 && (
+              <Link
+                href="/meals"
+                className="mx-4 mb-1.5 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100/80 dark:hover:bg-amber-900/40 transition-colors"
+              >
+                <UtensilsCrossed className="size-3.5 text-amber-500 shrink-0" />
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 flex-1 min-w-0">
+                  {dayMeals.map(meal => (
+                    <span key={meal.id} className="text-xs text-amber-700 dark:text-amber-300 truncate">
+                      {MEAL_EMOJI[meal.meal_type ?? 'dinner']} {meal.recipe_title ?? meal.custom_title ?? 'Repas'}
+                    </span>
+                  ))}
+                </div>
+              </Link>
+            )}
           </div>
         )
       })}
