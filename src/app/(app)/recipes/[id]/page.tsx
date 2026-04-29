@@ -3,8 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getActiveHouseholdId } from '@/lib/active-household'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Clock, Users, ExternalLink } from 'lucide-react'
-import { ToggleFavoriteButton, DeleteRecipeButton, AddToShoppingButton } from '@/components/recipes/recipe-actions'
+import { ChevronLeft, Clock, Users, ExternalLink, CheckCircle2, Circle } from 'lucide-react'
+import { ToggleFavoriteButton, DeleteRecipeButton, AddToShoppingButton, AddMissingToShoppingButton } from '@/components/recipes/recipe-actions'
 import PlanMealSheet from '@/components/recipes/plan-meal-sheet'
 import EditRecipeSheet from '@/components/recipes/edit-recipe-sheet'
 
@@ -29,7 +29,7 @@ export default async function RecipeDetailPage({
   const householdId = (await getActiveHouseholdId(memberships))!
   const admin = createAdminClient()
 
-  const [{ data: recipe }, { data: ingredients }, { data: lists }] = await Promise.all([
+  const [{ data: recipe }, { data: ingredients }, { data: lists }, { data: stockItems }] = await Promise.all([
     admin
       .from('recipes')
       .select('id, title, servings, prep_minutes, cook_minutes, instructions, source_url, tags, is_favorite, household_id')
@@ -46,12 +46,38 @@ export default async function RecipeDetailPage({
       .eq('household_id', householdId)
       .eq('is_archived', false)
       .order('created_at', { ascending: true }),
+    admin
+      .from('stock_items')
+      .select('name, quantity, unit')
+      .eq('household_id', householdId),
   ])
 
   if (!recipe || recipe.household_id !== householdId) notFound()
 
   const totalMin = (recipe.prep_minutes ?? 0) + (recipe.cook_minutes ?? 0)
   const defaultList = lists?.[0]
+
+  // Match ingredients against stock (case-insensitive, accent-insensitive)
+  function normalizeName(s: string) {
+    return s.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  }
+  const stockNames = new Set((stockItems ?? []).map(s => normalizeName(s.name)))
+  const stockMap = new Map((stockItems ?? []).map(s => [normalizeName(s.name), s]))
+
+  function findInStock(name: string) {
+    const norm = normalizeName(name)
+    for (const [key, val] of stockMap) {
+      if (key === norm || key.includes(norm) || norm.includes(key)) return val
+    }
+    return null
+  }
+
+  const ingredientsWithStock = (ingredients ?? []).map(ing => ({
+    ...ing,
+    stockInfo: findInStock(ing.name),
+  }))
+
+  const missingCount = ingredientsWithStock.filter(i => !i.stockInfo).length
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto w-full">
@@ -106,18 +132,37 @@ export default async function RecipeDetailPage({
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-5">
         {/* Ingredients */}
-        {ingredients && ingredients.length > 0 && (
+        {ingredientsWithStock.length > 0 && (
           <section>
-            <h2 className="text-base font-semibold mb-2">Ingrédients</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-semibold">Ingrédients</h2>
+              {stockItems && stockItems.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {ingredientsWithStock.length - missingCount}/{ingredientsWithStock.length} en stock
+                </span>
+              )}
+            </div>
             <div className="bg-card border rounded-2xl divide-y">
-              {ingredients.map(ing => (
-                <div key={ing.id} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-sm">{ing.name}</span>
-                  {(ing.quantity || ing.unit) && (
-                    <span className="text-sm text-muted-foreground">
-                      {ing.quantity ?? ''}{ing.unit ? ` ${ing.unit}` : ''}
-                    </span>
+              {ingredientsWithStock.map(ing => (
+                <div key={ing.id} className="flex items-center gap-3 px-4 py-2.5">
+                  {stockItems && stockItems.length > 0 && (
+                    ing.stockInfo
+                      ? <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                      : <Circle className="size-4 text-muted-foreground/30 shrink-0" />
                   )}
+                  <span className={`text-sm flex-1 ${ing.stockInfo ? '' : ''}`}>{ing.name}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(ing.quantity || ing.unit) && (
+                      <span className="text-sm text-muted-foreground">
+                        {ing.quantity ?? ''}{ing.unit ? ` ${ing.unit}` : ''}
+                      </span>
+                    )}
+                    {ing.stockInfo && (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                        {ing.stockInfo.quantity != null ? `${ing.stockInfo.quantity}${ing.stockInfo.unit ? ` ${ing.stockInfo.unit}` : ''} dispo` : 'en stock'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -156,13 +201,30 @@ export default async function RecipeDetailPage({
             recipeTitle={recipe.title}
             householdId={householdId}
           />
-          {defaultList && ingredients && ingredients.length > 0 && (
-            <AddToShoppingButton
-              recipeId={recipe.id}
-              householdId={householdId}
-              listId={defaultList.id}
-              listName={defaultList.name}
-            />
+          {defaultList && ingredientsWithStock.length > 0 && (
+            <>
+              {missingCount > 0 && (
+                <AddMissingToShoppingButton
+                  recipeId={recipe.id}
+                  householdId={householdId}
+                  listId={defaultList.id}
+                  listName={defaultList.name}
+                  missingCount={missingCount}
+                />
+              )}
+              {missingCount === 0 && stockItems && stockItems.length > 0 ? (
+                <p className="text-sm text-emerald-600 dark:text-emerald-400 text-center py-1">
+                  Tout est en stock 🎉
+                </p>
+              ) : (
+                <AddToShoppingButton
+                  recipeId={recipe.id}
+                  householdId={householdId}
+                  listId={defaultList.id}
+                  listName={defaultList.name}
+                />
+              )}
+            </>
           )}
         </section>
       </div>

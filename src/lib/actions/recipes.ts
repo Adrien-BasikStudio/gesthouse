@@ -184,3 +184,52 @@ export async function addIngredientsToShopping(
   revalidatePath('/shopping')
   return { count: ingredients.length }
 }
+
+function normalizeIngredientName(s: string) {
+  return s.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+export async function addMissingIngredientsToShopping(
+  recipeId: string,
+  householdId: string,
+  listId: string
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const admin = createAdminClient()
+  const [{ data: ingredients }, { data: stockItems }] = await Promise.all([
+    admin.from('recipe_ingredients').select('name, quantity, unit').eq('recipe_id', recipeId),
+    admin.from('stock_items').select('name').eq('household_id', householdId),
+  ])
+
+  if (!ingredients || ingredients.length === 0) return { error: 'Aucun ingrédient' }
+
+  const stockNames = new Set((stockItems ?? []).map(s => normalizeIngredientName(s.name)))
+
+  const missing = ingredients.filter(ing => {
+    const norm = normalizeIngredientName(ing.name)
+    for (const sName of stockNames) {
+      if (sName === norm || sName.includes(norm) || norm.includes(sName)) return false
+    }
+    return true
+  })
+
+  if (missing.length === 0) return { count: 0 }
+
+  const { error } = await admin.from('shopping_items').insert(
+    missing.map(ing => ({
+      list_id: listId,
+      household_id: householdId,
+      name: ing.name,
+      quantity: ing.quantity,
+      unit: ing.unit,
+      added_by: user.id,
+    }))
+  )
+
+  if (error) return { error: error.message }
+  revalidatePath('/shopping')
+  return { count: missing.length }
+}

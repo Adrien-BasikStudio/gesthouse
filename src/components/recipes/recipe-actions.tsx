@@ -1,8 +1,8 @@
 'use client'
 
 import { useTransition } from 'react'
-import { Heart, Trash2, ShoppingBasket, Calendar } from 'lucide-react'
-import { toggleFavorite, deleteRecipe, addIngredientsToShopping } from '@/lib/actions/recipes'
+import { Heart, Trash2, ShoppingBasket, ShoppingCart } from 'lucide-react'
+import { toggleFavorite, deleteRecipe, addIngredientsToShopping, addMissingIngredientsToShopping } from '@/lib/actions/recipes'
 import { toast } from 'sonner'
 
 export function ToggleFavoriteButton({
@@ -90,7 +90,49 @@ export function AddToShoppingButton({
       className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors w-full"
     >
       <ShoppingBasket className="size-4 shrink-0" />
-      {isPending ? 'Ajout…' : `Ajouter à "${listName}"`}
+      {isPending ? 'Ajout…' : `Tout ajouter à "${listName}"`}
+    </button>
+  )
+}
+
+export function AddMissingToShoppingButton({
+  recipeId,
+  householdId,
+  listId,
+  listName,
+  missingCount,
+}: {
+  recipeId: string
+  householdId: string
+  listId: string
+  listName: string
+  missingCount: number
+}) {
+  const [isPending, startTransition] = useTransition()
+
+  function handle() {
+    startTransition(async () => {
+      const result = await addMissingIngredientsToShopping(recipeId, householdId, listId)
+      if ('error' in result) {
+        toast.error(result.error)
+      } else if (result.count === 0) {
+        toast.success('Tout est déjà en stock !')
+      } else {
+        toast.success(`${result.count} ingrédient${result.count > 1 ? 's' : ''} manquant${result.count > 1 ? 's' : ''} ajouté${result.count > 1 ? 's' : ''} à "${listName}"`)
+      }
+    })
+  }
+
+  if (missingCount === 0) return null
+
+  return (
+    <button
+      onClick={handle}
+      disabled={isPending}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors w-full"
+    >
+      <ShoppingCart className="size-4 shrink-0" />
+      {isPending ? 'Ajout…' : `Ajouter les manquants (${missingCount}) à "${listName}"`}
     </button>
   )
 }
