@@ -1,17 +1,22 @@
 import webpush from 'web-push'
 import { createAdminClient } from './supabase/admin'
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL ?? 'mailto:admin@example.com',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '',
-  process.env.VAPID_PRIVATE_KEY ?? ''
-)
+function initWebPush() {
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  const privateKey = process.env.VAPID_PRIVATE_KEY
+  const email = process.env.VAPID_EMAIL ?? 'mailto:admin@example.com'
+
+  if (!publicKey || !privateKey) return false
+
+  webpush.setVapidDetails(email, publicKey, privateKey)
+  return true
+}
 
 export async function sendPushToUser(
   userId: string,
   payload: { title: string; body: string; url?: string }
 ) {
-  if (!process.env.VAPID_PRIVATE_KEY) return
+  if (!initWebPush()) return
 
   const admin = createAdminClient()
   const { data: subs } = await admin
@@ -29,7 +34,6 @@ export async function sendPushToUser(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         message
       ).catch(async err => {
-        // Remove stale subscriptions (410 = gone)
         if (err.statusCode === 410) {
           await admin.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
         }
@@ -43,7 +47,7 @@ export async function sendPushToHousehold(
   payload: { title: string; body: string; url?: string },
   excludeUserId?: string
 ) {
-  if (!process.env.VAPID_PRIVATE_KEY) return
+  if (!initWebPush()) return
 
   const admin = createAdminClient()
   let query = admin
