@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 
 function revalidateShopping() {
   revalidatePath('/shopping/[listId]', 'page')
-  revalidateShopping()
+  revalidatePath('/shopping')
 }
 
 export async function createList(formData: FormData) {
