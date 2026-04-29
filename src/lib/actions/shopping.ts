@@ -5,6 +5,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+function revalidateShopping() {
+  revalidatePath('/shopping/[listId]', 'page')
+  revalidateShopping()
+}
+
 export async function createList(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -21,7 +26,7 @@ export async function createList(formData: FormData) {
     .single()
 
   if (error) return { error: error.message }
-  revalidatePath('/shopping')
+  revalidateShopping()
   return { id: data.id }
 }
 
@@ -49,7 +54,7 @@ export async function addItem(formData: FormData) {
   })
 
   if (error) return { error: error.message }
-  revalidatePath('/shopping')
+  revalidateShopping()
   return { success: true }
 }
 
@@ -68,7 +73,7 @@ export async function toggleItem(itemId: string, checked: boolean) {
     .eq('id', itemId)
 
   if (error) return { error: error.message }
-  revalidatePath('/shopping')
+  revalidateShopping()
   return { success: true }
 }
 
@@ -76,7 +81,7 @@ export async function deleteItem(itemId: string) {
   const admin = createAdminClient()
   const { error } = await admin.from('shopping_items').delete().eq('id', itemId)
   if (error) return { error: error.message }
-  revalidatePath('/shopping')
+  revalidateShopping()
   return { success: true }
 }
 
@@ -88,7 +93,7 @@ export async function resetList(listId: string) {
     .eq('list_id', listId)
 
   if (error) return { error: error.message }
-  revalidatePath('/shopping')
+  revalidateShopping()
   return { success: true }
 }
 
@@ -101,6 +106,6 @@ export async function deleteCheckedItems(listId: string) {
     .eq('is_checked', true)
 
   if (error) return { error: error.message }
-  revalidatePath('/shopping')
+  revalidateShopping()
   return { success: true }
 }

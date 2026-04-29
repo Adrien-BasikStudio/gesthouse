@@ -81,6 +81,7 @@ export default async function ShoppingListPage({
             {lists && lists.length === 1 && (
               <h1 className="text-2xl font-bold">{currentList.name}</h1>
             )}
+            <CreateListButton householdId={householdId} />
           </div>
           <div className="flex items-center gap-1">
             <Link
