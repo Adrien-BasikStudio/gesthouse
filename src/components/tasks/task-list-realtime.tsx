@@ -13,17 +13,26 @@ type Task = {
   due_at: string | null
   completed_at: string | null
   recurrence_rule: string | null
+  group_id?: string | null
   profiles?: { display_name: string } | null
+  household_groups?: { name: string; color: string; emoji: string | null } | null
 }
+
+type Member = { user_id: string; display_name: string }
+type Group = { id: string; name: string; emoji: string | null; color: string }
 
 export default function TaskListRealtime({
   initialTasks,
   householdId,
   channelSuffix = 'default',
+  members = [],
+  groups = [],
 }: {
   initialTasks: Task[]
   householdId: string
   channelSuffix?: string
+  members?: Member[]
+  groups?: Group[]
 }) {
   const router = useRouter()
   const [tasks, setTasks] = useState(initialTasks)
@@ -69,7 +78,7 @@ export default function TaskListRealtime({
   return (
     <div className="space-y-2 py-2">
       {pending.map((task) => (
-        <TaskRow key={task.id} task={task} />
+        <TaskRow key={task.id} task={task} members={members} groups={groups} />
       ))}
 
       {done.length > 0 && (
@@ -78,7 +87,7 @@ export default function TaskListRealtime({
             Terminées ({done.length})
           </p>
           {done.map((task) => (
-            <TaskRow key={task.id} task={task} />
+            <TaskRow key={task.id} task={task} members={members} groups={groups} />
           ))}
         </div>
       )}

@@ -159,6 +159,8 @@ export default async function TasksPage({
             initialTasks={todayTasks ?? []}
             householdId={householdId}
             channelSuffix="today"
+            members={membersForFilter}
+            groups={groupsForFilter}
           />
         </TabsContent>
 
@@ -167,6 +169,8 @@ export default async function TasksPage({
             initialTasks={weekTasks ?? []}
             householdId={householdId}
             channelSuffix="week"
+            members={membersForFilter}
+            groups={groupsForFilter}
           />
         </TabsContent>
 
@@ -175,6 +179,8 @@ export default async function TasksPage({
             initialTasks={historyTasks ?? []}
             householdId={householdId}
             channelSuffix="history"
+            members={membersForFilter}
+            groups={groupsForFilter}
           />
         </TabsContent>
       </Tabs>

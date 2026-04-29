@@ -1,10 +1,27 @@
 'use client'
 
-import { useTransition } from 'react'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
-import { deleteStockItem, updateQuantity } from '@/lib/actions/stock'
+import { deleteStockItem, updateQuantity, updateStockItem } from '@/lib/actions/stock'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
+
+const LOCATIONS = [
+  { value: 'frigo', label: '🧊 Frigo' },
+  { value: 'placard', label: '🗄️ Placard' },
+  { value: 'congelateur', label: '❄️ Congélateur' },
+  { value: 'cave', label: '🍷 Cave' },
+]
+
+const CATEGORIES = [
+  'Fruits & Légumes', 'Produits laitiers', 'Viandes & Poissons',
+  'Épicerie', 'Boissons', 'Surgelés', 'Hygiène', 'Divers',
+]
 
 type Item = {
   id: string
@@ -12,11 +29,15 @@ type Item = {
   quantity: number | null
   unit: string | null
   category: string | null
+  location: string | null
   expires_on: string | null
 }
 
 export default function StockItemRow({ item }: { item: Item }) {
   const [isPending, startTransition] = useTransition()
+  const [editOpen, setEditOpen] = useState(false)
+  const [location, setLocation] = useState<string>(item.location ?? 'placard')
+  const [category, setCategory] = useState<string>(item.category ?? '')
 
   function handleDelete() {
     startTransition(async () => {
@@ -29,6 +50,23 @@ export default function StockItemRow({ item }: { item: Item }) {
     startTransition(async () => {
       const result = await updateQuantity(item.id, delta)
       if (result?.error) toast.error(result.error)
+    })
+  }
+
+  function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    formData.set('location', location)
+    if (category) formData.set('category', category)
+
+    startTransition(async () => {
+      const result = await updateStockItem(item.id, formData)
+      if (result?.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Article modifié')
+        setEditOpen(false)
+      }
     })
   }
 
@@ -73,6 +111,101 @@ export default function StockItemRow({ item }: { item: Item }) {
           <Plus className="size-3.5" />
         </button>
       </div>
+
+      <Sheet open={editOpen} onOpenChange={setEditOpen}>
+        <SheetTrigger
+          className="shrink-0 p-1.5 rounded-lg text-muted-foreground/30 hover:text-foreground hover:bg-secondary transition-colors"
+        >
+          <Pencil className="size-4" />
+        </SheetTrigger>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90dvh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Modifier l&apos;article</SheetTitle>
+          </SheetHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4 mt-4 pb-6">
+            <div className="space-y-2">
+              <Label htmlFor={`edit-stock-name-${item.id}`}>Article *</Label>
+              <Input
+                id={`edit-stock-name-${item.id}`}
+                name="name"
+                defaultValue={item.name}
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor={`edit-stock-qty-${item.id}`}>Quantité</Label>
+                <Input
+                  id={`edit-stock-qty-${item.id}`}
+                  name="quantity"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  defaultValue={item.quantity ?? ''}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`edit-stock-unit-${item.id}`}>Unité</Label>
+                <Input
+                  id={`edit-stock-unit-${item.id}`}
+                  name="unit"
+                  defaultValue={item.unit ?? ''}
+                  placeholder="kg, L, pcs…"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emplacement</Label>
+              <Select value={location} onValueChange={v => { if (v !== null) setLocation(v) }}>
+                <SelectTrigger>
+                  <SelectValue>
+                    {LOCATIONS.find(l => l.value === location)?.label ?? 'Placard'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCATIONS.map(l => (
+                    <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Catégorie</Label>
+              <Select value={category || 'none'} onValueChange={v => { if (v !== null) setCategory(v === 'none' ? '' : v) }}>
+                <SelectTrigger>
+                  <SelectValue>
+                    {category || <span className="text-muted-foreground">Aucune</span>}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucune</SelectItem>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`edit-stock-exp-${item.id}`}>Date de péremption</Label>
+              <Input
+                id={`edit-stock-exp-${item.id}`}
+                name="expires_on"
+                type="date"
+                defaultValue={item.expires_on ?? ''}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+          </form>
+        </SheetContent>
+      </Sheet>
 
       <button
         onClick={handleDelete}

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ChevronLeft, Clock, Users, ExternalLink } from 'lucide-react'
 import { ToggleFavoriteButton, DeleteRecipeButton, AddToShoppingButton } from '@/components/recipes/recipe-actions'
 import PlanMealSheet from '@/components/recipes/plan-meal-sheet'
+import EditRecipeSheet from '@/components/recipes/edit-recipe-sheet'
 
 export default async function RecipeDetailPage({
   params,
@@ -65,6 +66,7 @@ export default async function RecipeDetailPage({
           </Link>
           <div className="flex items-center gap-2">
             <ToggleFavoriteButton recipeId={recipe.id} isFavorite={recipe.is_favorite} />
+            <EditRecipeSheet recipe={recipe} ingredients={ingredients ?? []} />
             <DeleteRecipeButton recipeId={recipe.id} />
           </div>
         </div>

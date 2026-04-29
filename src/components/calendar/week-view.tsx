@@ -1,10 +1,14 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { format, isToday, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { MapPin, Trash2, Clock, CheckSquare } from 'lucide-react'
-import { deleteEvent } from '@/lib/actions/calendar'
+import { MapPin, Pencil, Trash2, Clock, CheckSquare } from 'lucide-react'
+import { deleteEvent, updateEvent } from '@/lib/actions/calendar'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -30,18 +34,192 @@ type Task = {
 }
 
 type MemberMap = Record<string, string>
+type Member = { user_id: string; display_name: string }
+
+const COLORS = [
+  { value: '#E8923C', label: 'Ambre' },
+  { value: '#3B82F6', label: 'Bleu' },
+  { value: '#10B981', label: 'Vert' },
+  { value: '#EF4444', label: 'Rouge' },
+  { value: '#8B5CF6', label: 'Violet' },
+  { value: '#F59E0B', label: 'Jaune' },
+]
+
+function EventEditSheet({
+  event,
+  members,
+}: {
+  event: Event
+  members: Member[]
+}) {
+  const [open, setOpen] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [allDay, setAllDay] = useState(event.all_day)
+  const [color, setColor] = useState(event.color ?? COLORS[0].value)
+  const [attendees, setAttendees] = useState<string[]>(event.attendee_ids ?? members.map(m => m.user_id))
+
+  const startDate = new Date(event.starts_at)
+  const endDate = new Date(event.ends_at)
+
+  function toggleAttendee(uid: string) {
+    setAttendees(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid])
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    formData.set('all_day', String(allDay))
+    formData.set('color', color)
+    attendees.forEach(uid => formData.append('attendees', uid))
+
+    startTransition(async () => {
+      const result = await updateEvent(event.id, formData)
+      if (result?.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Événement modifié')
+        setOpen(false)
+      }
+    })
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
+        className="shrink-0 p-1 rounded-lg text-muted-foreground/30 hover:text-foreground hover:bg-secondary transition-colors self-start"
+      >
+        <Pencil className="size-4" />
+      </SheetTrigger>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[92dvh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Modifier l&apos;événement</SheetTitle>
+        </SheetHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 pb-6">
+          <div className="space-y-2">
+            <Label htmlFor={`edit-event-title-${event.id}`}>Titre *</Label>
+            <Input
+              id={`edit-event-title-${event.id}`}
+              name="title"
+              defaultValue={event.title}
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`edit-event-date-${event.id}`}>Date *</Label>
+            <Input
+              id={`edit-event-date-${event.id}`}
+              name="date"
+              type="date"
+              defaultValue={format(startDate, 'yyyy-MM-dd')}
+              required
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setAllDay(!allDay)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-colors ${allDay ? 'bg-primary text-primary-foreground border-primary' : 'border-input'}`}
+            >
+              Journée entière
+            </button>
+          </div>
+
+          {!allDay && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor={`edit-event-start-${event.id}`}>Début</Label>
+                <Input
+                  id={`edit-event-start-${event.id}`}
+                  name="start_time"
+                  type="time"
+                  defaultValue={format(startDate, 'HH:mm')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`edit-event-end-${event.id}`}>Fin</Label>
+                <Input
+                  id={`edit-event-end-${event.id}`}
+                  name="end_time"
+                  type="time"
+                  defaultValue={format(endDate, 'HH:mm')}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor={`edit-event-loc-${event.id}`}>Lieu</Label>
+            <Input
+              id={`edit-event-loc-${event.id}`}
+              name="location"
+              defaultValue={event.location ?? ''}
+              placeholder="Adresse ou lieu"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Couleur</Label>
+            <div className="flex gap-2">
+              {COLORS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setColor(c.value)}
+                  className={`size-7 rounded-full transition-transform ${color === c.value ? 'ring-2 ring-offset-2 ring-foreground scale-110' : ''}`}
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              ))}
+            </div>
+          </div>
+
+          {members.length > 0 && (
+            <div className="space-y-2">
+              <Label>Participants</Label>
+              <div className="flex flex-wrap gap-2">
+                {members.map(m => (
+                  <button
+                    key={m.user_id}
+                    type="button"
+                    onClick={() => toggleAttendee(m.user_id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      attendees.includes(m.user_id)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-muted-foreground'
+                    }`}
+                  >
+                    {m.display_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </form>
+      </SheetContent>
+    </Sheet>
+  )
+}
 
 export default function WeekView({
   days,
   events,
   tasks = [],
   memberMap,
+  members = [],
   currentUserId,
 }: {
   days: Date[]
   events: Event[]
   tasks?: Task[]
   memberMap: MemberMap
+  members?: Member[]
   currentUserId: string
 }) {
   const [isPending, startTransition] = useTransition()
@@ -52,7 +230,7 @@ export default function WeekView({
     const date = format(day, 'yyyy-MM-dd')
     const params = new URLSearchParams(searchParams.toString())
     params.set('new', date)
-    params.delete('tasks') // don't carry tasks param into new event flow
+    params.delete('tasks')
     router.push(`/calendar?${params.toString()}`)
   }
 
@@ -98,7 +276,6 @@ export default function WeekView({
             {dayEvents.map(event => {
               const start = new Date(event.starts_at)
               const end = new Date(event.ends_at)
-              const canDelete = event.attendee_ids?.includes(currentUserId) || true
 
               return (
                 <div
@@ -135,13 +312,16 @@ export default function WeekView({
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(event.id)}
-                    disabled={isPending}
-                    className="shrink-0 p-1 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors self-start"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <EventEditSheet event={event} members={members} />
+                    <button
+                      onClick={() => handleDelete(event.id)}
+                      disabled={isPending}
+                      className="p-1 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
                 </div>
               )
             })}

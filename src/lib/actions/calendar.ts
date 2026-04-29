@@ -68,3 +68,30 @@ export async function deleteEvent(eventId: string) {
   revalidatePath('/calendar')
   return { success: true }
 }
+
+export async function updateEvent(eventId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const allDay = formData.get('all_day') === 'true'
+  const dateStr = String(formData.get('date'))
+  const startTime = String(formData.get('start_time') || '09:00')
+  const endTime = String(formData.get('end_time') || '10:00')
+  const attendeeIds = formData.getAll('attendees').map(String).filter(Boolean)
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('events').update({
+    title: String(formData.get('title')),
+    starts_at: allDay ? `${dateStr}T00:00:00` : `${dateStr}T${startTime}:00`,
+    ends_at: allDay ? `${dateStr}T23:59:59` : `${dateStr}T${endTime}:00`,
+    all_day: allDay,
+    location: formData.get('location') ? String(formData.get('location')) : null,
+    color: formData.get('color') ? String(formData.get('color')) : null,
+    attendee_ids: attendeeIds.length > 0 ? attendeeIds : null,
+  }).eq('id', eventId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/calendar')
+  return { success: true }
+}

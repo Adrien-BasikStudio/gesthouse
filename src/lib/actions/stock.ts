@@ -54,6 +54,25 @@ export async function deleteStockItem(itemId: string) {
   return { success: true }
 }
 
+export async function updateStockItem(itemId: string, formData: FormData) {
+  const admin = createAdminClient()
+  const name = String(formData.get('name') ?? '').trim()
+  if (!name) return { error: 'Nom requis' }
+
+  const { error } = await admin.from('stock_items').update({
+    name,
+    quantity: formData.get('quantity') ? Number(formData.get('quantity')) : null,
+    unit: formData.get('unit') ? String(formData.get('unit')) : null,
+    location: formData.get('location') ? String(formData.get('location')) : 'placard',
+    category: formData.get('category') ? String(formData.get('category')) : null,
+    expires_on: formData.get('expires_on') ? String(formData.get('expires_on')) : null,
+  }).eq('id', itemId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/stock')
+  return { success: true }
+}
+
 export async function updateQuantity(itemId: string, delta: number) {
   const admin = createAdminClient()
   const { data: item } = await admin

@@ -6,6 +6,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
+function revalidateExpenses() {
+  revalidatePath('/expenses/[groupId]', 'page')
+  revalidatePath('/expenses')
+  revalidatePath('/home')
+}
+
 export async function createExpenseGroup(householdId: string, name: string) {
   const admin = createAdminClient()
   const { data, error } = await admin
@@ -15,7 +21,7 @@ export async function createExpenseGroup(householdId: string, name: string) {
     .single()
 
   if (error) return { error: error.message }
-  revalidatePath('/expenses')
+  revalidateExpenses()
   return { id: data.id }
 }
 
@@ -43,17 +49,13 @@ export async function addExpense(formData: FormData) {
   })
   if (!parsed.success) return { error: 'Données invalides' }
 
-  const amountCents = Math.round(
-    parseFloat(parsed.data.amount.replace(',', '.')) * 100
-  )
+  const amountCents = Math.round(parseFloat(parsed.data.amount.replace(',', '.')) * 100)
   if (amountCents <= 0) return { error: 'Montant invalide' }
 
-  // Participants = all members of household
   const participantIds = formData.getAll('participants').map(String)
   if (participantIds.length === 0) return { error: 'Sélectionne au moins un participant' }
 
   const sharePerPerson = Math.floor(amountCents / participantIds.length)
-  // Add remainder to first participant to avoid rounding loss
   const remainder = amountCents - sharePerPerson * participantIds.length
 
   const admin = createAdminClient()
@@ -83,7 +85,32 @@ export async function addExpense(formData: FormData) {
   const { error: sharesError } = await admin.from('expense_shares').insert(shares)
   if (sharesError) return { error: sharesError.message }
 
-  revalidatePath('/expenses')
+  revalidateExpenses()
+  return { success: true }
+}
+
+export async function updateExpense(expenseId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const description = String(formData.get('description') ?? '').trim()
+  if (!description) return { error: 'Description requise' }
+
+  const amountStr = String(formData.get('amount') ?? '').replace(',', '.')
+  const amountCents = Math.round(parseFloat(amountStr) * 100)
+  if (!amountCents || amountCents <= 0) return { error: 'Montant invalide' }
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('expenses').update({
+    description,
+    amount_cents: amountCents,
+    category: formData.get('category') ? String(formData.get('category')) : null,
+    spent_at: formData.get('spent_at') ? String(formData.get('spent_at')) : undefined,
+  }).eq('id', expenseId)
+
+  if (error) return { error: error.message }
+  revalidateExpenses()
   return { success: true }
 }
 
@@ -98,14 +125,14 @@ export async function addSettlement(formData: FormData) {
     household_id: String(formData.get('household_id')),
     from_user: String(formData.get('from_user')),
     to_user: String(formData.get('to_user')),
-    amount_cents: Math.round(parseFloat(String(formData.get('amount_cents'))) ),
+    amount_cents: Math.round(parseFloat(String(formData.get('amount_cents')))),
     currency: 'CHF',
     note: formData.get('note') ? String(formData.get('note')) : null,
     created_by: user.id,
   })
 
   if (error) return { error: error.message }
-  revalidatePath('/expenses')
+  revalidateExpenses()
   return { success: true }
 }
 
@@ -113,6 +140,6 @@ export async function deleteExpense(expenseId: string) {
   const admin = createAdminClient()
   const { error } = await admin.from('expenses').delete().eq('id', expenseId)
   if (error) return { error: error.message }
-  revalidatePath('/expenses')
+  revalidateExpenses()
   return { success: true }
 }

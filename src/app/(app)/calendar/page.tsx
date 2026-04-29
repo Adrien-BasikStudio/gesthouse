@@ -202,6 +202,7 @@ export default async function CalendarPage({
                 : t.household_groups as { name: string; color: string; emoji: string | null } | null,
             })) : []}
             memberMap={memberMap}
+            members={membersForSheet}
             currentUserId={user.id}
           />
           </Suspense>

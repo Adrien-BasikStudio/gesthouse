@@ -57,6 +57,57 @@ export async function createRecipe(formData: FormData) {
   redirect(`/recipes/${recipe.id}`)
 }
 
+export async function updateRecipe(recipeId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const title = String(formData.get('title') ?? '').trim()
+  if (!title) return { error: 'Titre requis' }
+
+  const tags = String(formData.get('tags') ?? '')
+    .split(',').map(t => t.trim()).filter(Boolean)
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('recipes').update({
+    title,
+    servings: formData.get('servings') ? Number(formData.get('servings')) : 4,
+    prep_minutes: formData.get('prep_minutes') ? Number(formData.get('prep_minutes')) : null,
+    cook_minutes: formData.get('cook_minutes') ? Number(formData.get('cook_minutes')) : null,
+    instructions: formData.get('instructions') ? String(formData.get('instructions')) : null,
+    source_url: formData.get('source_url') ? String(formData.get('source_url')) : null,
+    tags: tags.length > 0 ? tags : null,
+  }).eq('id', recipeId)
+
+  if (error) return { error: error.message }
+
+  // Replace ingredients
+  await admin.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
+
+  const names = formData.getAll('ingredient_name').map(String)
+  const qtys = formData.getAll('ingredient_qty').map(String)
+  const units = formData.getAll('ingredient_unit').map(String)
+  const ingredients = names
+    .map((name, i) => ({ name: name.trim(), qty: qtys[i], unit: units[i], pos: i }))
+    .filter(ing => ing.name)
+
+  if (ingredients.length > 0) {
+    await admin.from('recipe_ingredients').insert(
+      ingredients.map(ing => ({
+        recipe_id: recipeId,
+        name: ing.name,
+        quantity: ing.qty ? Number(ing.qty) : null,
+        unit: ing.unit || null,
+        position: ing.pos,
+      }))
+    )
+  }
+
+  revalidatePath('/recipes')
+  revalidatePath(`/recipes/${recipeId}`)
+  return { success: true }
+}
+
 export async function toggleFavorite(recipeId: string, current: boolean) {
   const admin = createAdminClient()
   const { error } = await admin.from('recipes')

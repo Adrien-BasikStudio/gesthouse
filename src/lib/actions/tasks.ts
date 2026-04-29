@@ -120,6 +120,33 @@ export async function deleteTask(taskId: string) {
   return { success: true }
 }
 
+export async function updateTask(taskId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const title = String(formData.get('title') ?? '').trim()
+  if (!title) return { error: 'Titre requis' }
+
+  const assignedTo = (() => { const v = formData.get('assigned_to'); return (!v || v === 'none') ? null : String(v) })()
+  const groupId = (() => { const v = formData.get('group_id'); return (!v || v === 'none') ? null : String(v) })()
+  const dueAt = formData.get('due_at') ? String(formData.get('due_at')) : null
+  const recurrence = (() => { const v = formData.get('recurrence_rule'); return (!v || v === 'none') ? null : String(v) })()
+
+  const admin = createAdminClient()
+  const { error } = await admin.from('tasks').update({
+    title,
+    assigned_to: assignedTo,
+    group_id: groupId,
+    due_at: dueAt,
+    recurrence_rule: recurrence,
+  }).eq('id', taskId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/tasks')
+  return { success: true }
+}
+
 function getNextOccurrence(date: Date, rule: string): Date {
   if (rule.includes('FREQ=DAILY')) return addDays(date, 1)
   if (rule.includes('FREQ=WEEKLY')) return addWeeks(date, 1)
