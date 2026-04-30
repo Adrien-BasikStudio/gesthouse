@@ -97,7 +97,8 @@ export async function completeTask(taskId: string) {
     })
   }
 
-  revalidatePath('/tasks')
+  // revalidatePath déclenché uniquement si une nouvelle tâche récurrente a été insérée
+  // (le realtime INSERT handler appelle router.refresh côté client)
   return { success: true }
 }
 
@@ -108,7 +109,7 @@ export async function uncompleteTask(taskId: string) {
     .eq('id', taskId)
 
   if (error) return { error: error.message }
-  revalidatePath('/tasks')
+  // Pas de revalidatePath : le realtime UPDATE met à jour le state local
   return { success: true }
 }
 
@@ -116,7 +117,7 @@ export async function deleteTask(taskId: string) {
   const admin = createAdminClient()
   const { error } = await admin.from('tasks').delete().eq('id', taskId)
   if (error) return { error: error.message }
-  revalidatePath('/tasks')
+  // Pas de revalidatePath : le realtime DELETE met à jour le state local
   return { success: true }
 }
 

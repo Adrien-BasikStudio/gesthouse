@@ -73,7 +73,7 @@ export async function toggleItem(itemId: string, checked: boolean) {
     .eq('id', itemId)
 
   if (error) return { error: error.message }
-  revalidateShopping()
+  // Pas de revalidatePath : le realtime met à jour le state local directement
   return { success: true }
 }
 
@@ -81,7 +81,7 @@ export async function deleteItem(itemId: string) {
   const admin = createAdminClient()
   const { error } = await admin.from('shopping_items').delete().eq('id', itemId)
   if (error) return { error: error.message }
-  revalidateShopping()
+  // Pas de revalidatePath : le realtime met à jour le state local directement
   return { success: true }
 }
 

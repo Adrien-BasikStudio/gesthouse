@@ -45,22 +45,40 @@ export default function TaskListRealtime({
     const supabase = createClient()
     const channel = supabase
       .channel(`tasks-realtime-${channelSuffix}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-          filter: `household_id=eq.${householdId}`,
-        },
-        () => {
-          router.refresh()
-        }
-      )
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tasks',
+        filter: `household_id=eq.${householdId}`,
+      }, (payload) => {
+        // Mise à jour locale des champs scalaires — pas de re-render complet
+        setTasks(prev => prev.map(t =>
+          t.id === payload.new.id
+            ? { ...t, completed_at: payload.new.completed_at, assigned_to: payload.new.assigned_to, due_at: payload.new.due_at, title: payload.new.title }
+            : t
+        ))
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'tasks',
+        filter: `household_id=eq.${householdId}`,
+      }, (payload) => {
+        setTasks(prev => prev.filter(t => t.id !== payload.old.id))
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'tasks',
+        filter: `household_id=eq.${householdId}`,
+      }, () => {
+        // Nouvelle tâche (récurrence ou autre membre) — refresh pour avoir les joins
+        router.refresh()
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [householdId, router])
+  }, [householdId, channelSuffix, router])
 
   const pending = tasks.filter((t) => !t.completed_at)
   const done = tasks.filter((t) => t.completed_at)

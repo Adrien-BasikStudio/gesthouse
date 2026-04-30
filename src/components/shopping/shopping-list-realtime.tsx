@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ShoppingItemRow from './shopping-item-row'
 
@@ -25,7 +24,6 @@ export default function ShoppingListRealtime({
   householdId: string
   hideChecked: boolean
 }) {
-  const router = useRouter()
   const [items, setItems] = useState(initialItems)
 
   useEffect(() => {
@@ -37,17 +35,36 @@ export default function ShoppingListRealtime({
     const channel = supabase
       .channel(`shopping-${listId}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'shopping_items',
         filter: `list_id=eq.${listId}`,
-      }, () => {
-        router.refresh()
+      }, (payload) => {
+        setItems(prev => {
+          if (prev.find(i => i.id === payload.new.id)) return prev
+          return [...prev, payload.new as Item]
+        })
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'shopping_items',
+        filter: `list_id=eq.${listId}`,
+      }, (payload) => {
+        setItems(prev => prev.map(i => i.id === payload.new.id ? (payload.new as Item) : i))
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'shopping_items',
+        filter: `list_id=eq.${listId}`,
+      }, (payload) => {
+        setItems(prev => prev.filter(i => i.id !== payload.old.id))
       })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [listId, router])
+  }, [listId])
 
   const pending = items.filter(i => !i.is_checked)
   const checked = items.filter(i => i.is_checked)
