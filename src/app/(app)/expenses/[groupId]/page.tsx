@@ -43,7 +43,7 @@ export default async function ExpenseGroupPage({
     admin.from('expense_groups').select('id, name').eq('household_id', householdId).eq('is_archived', false).order('created_at'),
     admin.from('expense_groups').select('id, name').eq('id', groupId).single(),
     admin.from('expenses')
-      .select('id, description, amount_cents, category, spent_at, paid_by, profiles:paid_by(display_name)')
+      .select('id, description, amount_cents, category, spent_at, paid_by')
       .eq('group_id', groupId)
       .order('spent_at', { ascending: false })
       .limit(100),
@@ -76,7 +76,13 @@ export default async function ExpenseGroupPage({
     cents: b.balance_cents,
   }))
 
-  const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + e.amount_cents, 0)
+  // Enrich expenses with payer display name (avoids fragile FK join in PostgREST)
+  const enrichedExpenses = (expenses ?? []).map(e => ({
+    ...e,
+    profiles: { display_name: memberMap.get(e.paid_by) ?? 'Membre' },
+  }))
+
+  const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + (e.amount_cents ?? 0), 0)
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto w-full">
@@ -99,9 +105,9 @@ export default async function ExpenseGroupPage({
             <h1 className="text-2xl font-bold">{currentGroup.name}</h1>
           )}
         </div>
-        {(expenses?.length ?? 0) > 0 && (
+        {enrichedExpenses.length > 0 && (
           <p className="text-sm text-muted-foreground">
-            {expenses!.length} dépense{expenses!.length > 1 ? 's' : ''} · Total CHF {(totalExpenses / 100).toFixed(2)}
+            {enrichedExpenses.length} dépense{enrichedExpenses.length > 1 ? 's' : ''} · Total CHF {(totalExpenses / 100).toFixed(2)}
           </p>
         )}
       </div>
@@ -110,11 +116,11 @@ export default async function ExpenseGroupPage({
         <TabsList className="mx-4 mb-1">
           <TabsTrigger value="expenses" className="flex-1">Dépenses</TabsTrigger>
           <TabsTrigger value="balances" className="flex-1">Soldes</TabsTrigger>
-          <ExportCsvButton expenses={(expenses ?? []) as never} groupName={currentGroup.name} />
+          <ExportCsvButton expenses={enrichedExpenses} groupName={currentGroup.name} />
         </TabsList>
 
         <TabsContent value="expenses" className="flex-1 px-4 overflow-y-auto pb-24">
-          {(expenses?.length ?? 0) === 0 ? (
+          {enrichedExpenses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
               <p className="text-3xl">💸</p>
               <p className="font-medium text-muted-foreground">Aucune dépense.</p>
@@ -122,10 +128,10 @@ export default async function ExpenseGroupPage({
             </div>
           ) : (
             <div className="space-y-2 py-2">
-              {(expenses ?? []).map(e => (
+              {enrichedExpenses.map(e => (
                 <ExpenseRow
                   key={e.id}
-                  expense={e as never}
+                  expense={e}
                   currentUserId={user.id}
                   isAdmin={isAdmin}
                 />

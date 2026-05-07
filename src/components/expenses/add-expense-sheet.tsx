@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { addExpense } from '@/lib/actions/expenses'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -34,7 +33,6 @@ export default function AddExpenseSheet({
   members: Member[]
   currentUserId: string
 }) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [paidBy, setPaidBy] = useState<string | null>(currentUserId)
@@ -68,10 +66,9 @@ export default function AddExpenseSheet({
         toast.success('Dépense ajoutée 🐜')
         setOpen(false)
         setCategory(null)
-        router.refresh()
-        ;(e.target as HTMLFormElement).reset()
         setParticipants(members.map(m => m.user_id))
         setPaidBy(currentUserId)
+        window.location.href = `/expenses/${groupId}`
       }
     })
   }
