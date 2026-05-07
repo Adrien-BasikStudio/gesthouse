@@ -158,6 +158,12 @@ export default function AddRecipeSheet({ householdId }: { householdId: string })
             />
           </div>
 
+          {/* Video */}
+          <div className="space-y-2">
+            <Label htmlFor="video_url">Vidéo <span className="text-muted-foreground font-normal">(YouTube ou Instagram)</span></Label>
+            <Input id="video_url" name="video_url" type="url" placeholder="https://youtube.com/watch?v=… ou https://instagram.com/reel/…" />
+          </div>
+
           {/* Source */}
           <div className="space-y-2">
             <Label htmlFor="source_url">Lien source</Label>

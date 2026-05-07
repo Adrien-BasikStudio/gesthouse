@@ -26,6 +26,7 @@ export async function createRecipe(formData: FormData) {
     cook_minutes: formData.get('cook_minutes') ? Number(formData.get('cook_minutes')) : null,
     instructions: formData.get('instructions') ? String(formData.get('instructions')) : null,
     source_url: formData.get('source_url') ? String(formData.get('source_url')) : null,
+    video_url: formData.get('video_url') ? String(formData.get('video_url')) : null,
     tags: tags.length > 0 ? tags : null,
     created_by: user.id,
   }).select('id').single()
@@ -76,6 +77,7 @@ export async function updateRecipe(recipeId: string, formData: FormData) {
     cook_minutes: formData.get('cook_minutes') ? Number(formData.get('cook_minutes')) : null,
     instructions: formData.get('instructions') ? String(formData.get('instructions')) : null,
     source_url: formData.get('source_url') ? String(formData.get('source_url')) : null,
+    video_url: formData.get('video_url') ? String(formData.get('video_url')) : null,
     tags: tags.length > 0 ? tags : null,
   }).eq('id', recipeId)
 

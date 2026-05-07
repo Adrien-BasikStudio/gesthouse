@@ -20,6 +20,7 @@ type Recipe = {
   cook_minutes: number | null
   instructions: string | null
   source_url: string | null
+  video_url: string | null
   tags: string[] | null
 }
 
@@ -213,6 +214,17 @@ export default function EditRecipeSheet({
               defaultValue={recipe.instructions ?? ''}
               placeholder="Étapes de préparation…"
               rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-video">Vidéo <span className="text-muted-foreground font-normal">(YouTube ou Instagram)</span></Label>
+            <Input
+              id="edit-video"
+              name="video_url"
+              type="url"
+              defaultValue={recipe.video_url ?? ''}
+              placeholder="https://youtube.com/watch?v=… ou https://instagram.com/reel/…"
             />
           </div>
 

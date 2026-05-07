@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getActiveHouseholdId } from '@/lib/active-household'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Clock, Users, ExternalLink, CheckCircle2, Circle } from 'lucide-react'
+import { ChevronLeft, Clock, Users, ExternalLink, CheckCircle2, Circle, Play } from 'lucide-react'
 import { ToggleFavoriteButton, DeleteRecipeButton, AddToShoppingButton, AddMissingToShoppingButton } from '@/components/recipes/recipe-actions'
 import PlanMealSheet from '@/components/recipes/plan-meal-sheet'
 import EditRecipeSheet from '@/components/recipes/edit-recipe-sheet'
@@ -32,7 +32,7 @@ export default async function RecipeDetailPage({
   const [{ data: recipe }, { data: ingredients }, { data: lists }, { data: stockItems }] = await Promise.all([
     admin
       .from('recipes')
-      .select('id, title, servings, prep_minutes, cook_minutes, instructions, source_url, tags, is_favorite, household_id')
+      .select('id, title, servings, prep_minutes, cook_minutes, instructions, source_url, video_url, tags, is_favorite, household_id')
       .eq('id', id)
       .single(),
     admin
@@ -56,6 +56,15 @@ export default async function RecipeDetailPage({
 
   const totalMin = (recipe.prep_minutes ?? 0) + (recipe.cook_minutes ?? 0)
   const defaultList = lists?.[0]
+
+  // Détection et extraction de l'ID YouTube
+  function getYouTubeId(url: string): string | null {
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([^&\n?#]{11})/)
+    return match ? match[1] : null
+  }
+
+  const youtubeId = recipe.video_url ? getYouTubeId(recipe.video_url) : null
+  const isInstagram = recipe.video_url ? recipe.video_url.includes('instagram.com') : false
 
   // Match ingredients against stock (case-insensitive, accent-insensitive)
   function normalizeName(s: string) {
@@ -92,7 +101,7 @@ export default async function RecipeDetailPage({
           </Link>
           <div className="flex items-center gap-2">
             <ToggleFavoriteButton recipeId={recipe.id} isFavorite={recipe.is_favorite} />
-            <EditRecipeSheet recipe={recipe} ingredients={ingredients ?? []} />
+            <EditRecipeSheet recipe={{ ...recipe, video_url: recipe.video_url ?? null }} ingredients={ingredients ?? []} />
             <DeleteRecipeButton recipeId={recipe.id} />
           </div>
         </div>
@@ -166,6 +175,40 @@ export default async function RecipeDetailPage({
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Video */}
+        {recipe.video_url && (
+          <section>
+            <h2 className="text-base font-semibold mb-2">Vidéo</h2>
+            {youtubeId ? (
+              <div className="rounded-2xl overflow-hidden aspect-video bg-black">
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}`}
+                  title="Vidéo recette"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            ) : (
+              <a
+                href={recipe.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 bg-card border rounded-2xl hover:bg-accent/50 transition-colors"
+              >
+                <div className="size-9 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center shrink-0">
+                  <Play className="size-4 text-white fill-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{isInstagram ? 'Voir sur Instagram' : 'Voir la vidéo'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{recipe.video_url}</p>
+                </div>
+                <ExternalLink className="size-4 text-muted-foreground shrink-0" />
+              </a>
+            )}
           </section>
         )}
 
