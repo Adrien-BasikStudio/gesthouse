@@ -134,7 +134,7 @@ export default async function CalendarPage({
     tasksQuery = tasksQuery.in('group_id', activeGroups)
   }
 
-  const [{ data: events }, { data: tasks }, { data: meals }] = await Promise.all([
+  const [{ data: events }, { data: tasks }, { data: meals }, { data: sharedNotes }] = await Promise.all([
     eventsQuery,
     showTasks ? tasksQuery : Promise.resolve({ data: [] }),
     admin
@@ -144,6 +144,14 @@ export default async function CalendarPage({
       .gte('planned_for', format(rangeStart, 'yyyy-MM-dd'))
       .lte('planned_for', format(rangeEnd, 'yyyy-MM-dd'))
       .order('planned_for', { ascending: true }),
+    admin
+      .from('notes')
+      .select('id, title, content, note_date, color, user_id, profiles:user_id(display_name)')
+      .eq('household_id', householdId)
+      .eq('is_shared', true)
+      .gte('note_date', rangeStartDate)
+      .lte('note_date', rangeEndDate)
+      .order('note_date', { ascending: true }),
   ])
 
   const today = format(now, 'yyyy-MM-dd')
@@ -221,6 +229,15 @@ export default async function CalendarPage({
             memberMap={memberMap}
             members={membersForSheet}
             currentUserId={user.id}
+            notes={(sharedNotes ?? []).map(n => ({
+              id: n.id,
+              title: n.title,
+              content: n.content,
+              note_date: n.note_date,
+              color: n.color,
+              user_id: n.user_id,
+              author: (n.profiles as unknown as { display_name: string } | null)?.display_name ?? null,
+            }))}
           />
           </Suspense>
         ) : (

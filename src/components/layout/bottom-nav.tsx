@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CheckSquare, Calendar, ShoppingCart, ChefHat, CreditCard, Settings } from 'lucide-react'
+import { CheckSquare, Calendar, ShoppingCart, ChefHat, CreditCard, Settings, NotebookPen } from 'lucide-react'
 
 const navItems = [
   { href: '/tasks', label: 'Tâches', icon: CheckSquare },
   { href: '/calendar', label: 'Agenda', icon: Calendar },
   { href: '/shopping', label: 'Courses', icon: ShoppingCart, extra: ['/stock'] },
   { href: '/recipes', label: 'Recettes', icon: ChefHat, extra: ['/meals'] },
+  { href: '/notes', label: 'Notes', icon: NotebookPen },
   { href: '/expenses', label: 'Dépenses', icon: CreditCard },
   { href: '/settings', label: 'Foyer', icon: Settings },
 ]

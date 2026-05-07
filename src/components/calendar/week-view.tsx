@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { format, isToday, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { MapPin, Pencil, Trash2, Clock, CheckSquare, UtensilsCrossed } from 'lucide-react'
+import { MapPin, Pencil, Trash2, Clock, CheckSquare, UtensilsCrossed, BookOpen } from 'lucide-react'
 import { deleteEvent, updateEvent } from '@/lib/actions/calendar'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
@@ -50,6 +50,16 @@ const MEAL_EMOJI: Record<string, string> = {
 }
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'snack', 'dinner']
+
+type CalendarNote = {
+  id: string
+  title: string | null
+  content: string
+  note_date: string
+  color: string
+  user_id: string
+  author: string | null
+}
 
 type MemberMap = Record<string, string>
 type Member = { user_id: string; display_name: string }
@@ -230,6 +240,7 @@ export default function WeekView({
   events,
   tasks = [],
   meals = [],
+  notes = [],
   memberMap,
   members = [],
   currentUserId,
@@ -238,6 +249,7 @@ export default function WeekView({
   events: Event[]
   tasks?: Task[]
   meals?: MealPlan[]
+  notes?: CalendarNote[]
   memberMap: MemberMap
   members?: Member[]
   currentUserId: string
@@ -266,6 +278,7 @@ export default function WeekView({
       {days.map(day => {
         const dayEvents = events.filter(e => isSameDay(new Date(e.starts_at), day))
         const dayTasks = tasks.filter(t => t.due_at && isSameDay(new Date(t.due_at), day))
+        const dayNotes = notes.filter(n => n.note_date === format(day, 'yyyy-MM-dd'))
         const dayMeals = meals
           .filter(m => m.planned_for === format(day, 'yyyy-MM-dd'))
           .sort((a, b) => MEAL_ORDER.indexOf(a.meal_type ?? 'dinner') - MEAL_ORDER.indexOf(b.meal_type ?? 'dinner'))
@@ -288,7 +301,7 @@ export default function WeekView({
                   {format(day, 'd')}
                 </span>
               </button>
-              {dayEvents.length === 0 && dayTasks.length === 0 && dayMeals.length === 0 ? (
+              {dayEvents.length === 0 && dayTasks.length === 0 && dayMeals.length === 0 && dayNotes.length === 0 ? (
                 <span className="text-xs text-muted-foreground/50">Rien de prévu</span>
               ) : (
                 <span className="text-xs text-muted-foreground/30 ml-auto">+ Ajouter</span>
@@ -366,6 +379,26 @@ export default function WeekView({
                     {task.household_groups.emoji ?? ''}{task.household_groups.name}
                   </span>
                 )}
+              </Link>
+            ))}
+
+            {/* Notes partagées */}
+            {dayNotes.map(note => (
+              <Link
+                key={note.id}
+                href="/notes"
+                className="mx-4 mb-1.5 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border hover:bg-accent/50 transition-colors"
+                style={{ borderLeftWidth: 3, borderLeftColor: note.color }}
+              >
+                <BookOpen className="size-3.5 shrink-0" style={{ color: note.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">
+                    {note.title ?? note.content.slice(0, 40)}
+                  </p>
+                  {note.author && note.user_id !== currentUserId && (
+                    <p className="text-[10px] text-muted-foreground">{note.author}</p>
+                  )}
+                </div>
               </Link>
             ))}
 
