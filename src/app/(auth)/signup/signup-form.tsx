@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { signUpViaInvite } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,7 +18,11 @@ export default function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const searchParams = useSearchParams()
+  const router = useRouter()
   const next = searchParams.get('next') ?? '/tasks'
+
+  // Detect invite flow : next = /invite/[token]
+  const inviteToken = next.startsWith('/invite/') ? next.split('/invite/')[1] : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,6 +32,39 @@ export default function SignupForm() {
     }
     setLoading(true)
 
+    // --- Flux invitation : création immédiate sans email de confirmation ---
+    if (inviteToken) {
+      const fd = new FormData()
+      fd.set('invite_token', inviteToken)
+      fd.set('email', email)
+      fd.set('password', password)
+      fd.set('name', name.trim())
+
+      const result = await signUpViaInvite(fd)
+
+      if (result?.error) {
+        toast.error(result.error)
+        setLoading(false)
+        return
+      }
+
+      // Compte créé et confirmé — connexion directe
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+      setLoading(false)
+
+      if (signInError) {
+        toast.error('Compte créé mais connexion échouée. Connecte-toi manuellement.')
+        router.push(`/login?next=${encodeURIComponent(next)}`)
+        return
+      }
+
+      router.push(next)
+      return
+    }
+
+    // --- Flux classique : email de confirmation Supabase ---
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email,
