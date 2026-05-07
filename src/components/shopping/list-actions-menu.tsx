@@ -1,8 +1,8 @@
 'use client'
 
 import { useTransition, useState } from 'react'
-import { MoreVertical, RotateCcw, Trash2, Plus } from 'lucide-react'
-import { resetList, deleteCheckedItems, createList } from '@/lib/actions/shopping'
+import { MoreVertical, RotateCcw, Trash2, Plus, PackagePlus } from 'lucide-react'
+import { resetList, deleteCheckedItems, createList, addCheckedItemsToStock } from '@/lib/actions/shopping'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -34,6 +34,15 @@ export default function ListActionsMenu({
       const result = await deleteCheckedItems(listId)
       if (result?.error) toast.error(result.error)
       else toast.success('Articles cochés supprimés')
+    })
+  }
+
+  function handleAddToStock() {
+    setOpen(false)
+    startTransition(async () => {
+      const result = await addCheckedItemsToStock(listId, householdId)
+      if (result?.error) toast.error(result.error)
+      else toast.success(`${result.count} article${(result.count ?? 0) > 1 ? 's' : ''} ajouté${(result.count ?? 0) > 1 ? 's' : ''} au stock 📦`)
     })
   }
 
@@ -74,6 +83,13 @@ export default function ListActionsMenu({
             {checkedCount > 0 && (
               <>
                 <div className="h-px bg-border mx-3" />
+                <button
+                  onClick={handleAddToStock}
+                  disabled={isPending}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-accent transition-colors"
+                >
+                  <PackagePlus className="size-4" /> Mettre au stock
+                </button>
                 <button
                   onClick={handleReset}
                   disabled={isPending}

@@ -121,6 +121,18 @@ export async function deleteTask(taskId: string) {
   return { success: true }
 }
 
+export async function deleteCompletedTasks(householdId: string) {
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('tasks')
+    .delete()
+    .eq('household_id', householdId)
+    .not('completed_at', 'is', null)
+  if (error) return { error: error.message }
+  revalidatePath('/tasks')
+  return { success: true }
+}
+
 export async function updateTask(taskId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

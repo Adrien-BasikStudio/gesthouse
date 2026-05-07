@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { deleteCompletedTasks } from '@/lib/actions/tasks'
+import { toast } from 'sonner'
 import TaskRow from './task-row'
 
 type Task = {
@@ -36,6 +39,16 @@ export default function TaskListRealtime({
 }) {
   const router = useRouter()
   const [tasks, setTasks] = useState(initialTasks)
+  const [isPending, startTransition] = useTransition()
+
+  function handleDeleteCompleted() {
+    if (!confirm('Supprimer toutes les tâches terminées ?')) return
+    startTransition(async () => {
+      const result = await deleteCompletedTasks(householdId)
+      if (result?.error) toast.error(result.error)
+      else toast.success('Tâches terminées supprimées')
+    })
+  }
 
   useEffect(() => {
     setTasks(initialTasks)
@@ -101,9 +114,19 @@ export default function TaskListRealtime({
 
       {done.length > 0 && (
         <div className="mt-6 space-y-2">
-          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide px-1">
-            Terminées ({done.length})
-          </p>
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">
+              Terminées ({done.length})
+            </p>
+            <button
+              onClick={handleDeleteCompleted}
+              disabled={isPending}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 className="size-3" />
+              Tout effacer
+            </button>
+          </div>
           {done.map((task) => (
             <TaskRow key={task.id} task={task} members={members} groups={groups} />
           ))}

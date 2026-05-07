@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Heart, Clock } from 'lucide-react'
 import AddRecipeSheet from '@/components/recipes/add-recipe-sheet'
+import RecipeSuggestions from '@/components/recipes/recipe-suggestions'
 
 export default async function RecipesPage({
   searchParams,
@@ -145,6 +146,9 @@ export default async function RecipesPage({
         )}
       </div>
 
+      <div className="px-4">
+        <RecipeSuggestions householdId={householdId} />
+      </div>
       <AddRecipeSheet householdId={householdId} />
     </div>
   )

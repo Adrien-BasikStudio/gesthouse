@@ -35,7 +35,7 @@ export default async function ShoppingListPage({
   const householdId = (await getActiveHouseholdId(memberships))!
   const admin = createAdminClient()
 
-  const [{ data: lists }, { data: items }, { data: currentList }] = await Promise.all([
+  const [{ data: lists }, { data: items }, { data: currentList }, { data: historyRaw }] = await Promise.all([
     admin
       .from('shopping_lists')
       .select('id, name')
@@ -52,7 +52,25 @@ export default async function ShoppingListPage({
       .select('id, name')
       .eq('id', listId)
       .single(),
+    admin
+      .from('shopping_items')
+      .select('name')
+      .eq('household_id', householdId)
+      .order('created_at', { ascending: false })
+      .limit(500),
   ])
+
+  // Deduplicate by normalized name, keep original casing of most recent occurrence
+  const seen = new Set<string>()
+  const historySuggestions: string[] = []
+  for (const item of historyRaw ?? []) {
+    const norm = item.name.toLowerCase().trim()
+    if (!seen.has(norm)) {
+      seen.add(norm)
+      historySuggestions.push(item.name)
+    }
+  }
+  historySuggestions.sort((a, b) => a.localeCompare(b, 'fr'))
 
   if (!currentList) redirect('/shopping')
 
@@ -114,7 +132,7 @@ export default async function ShoppingListPage({
       </div>
 
       {/* Add input pinned at bottom */}
-      <AddItemInput listId={listId} householdId={householdId} />
+      <AddItemInput listId={listId} householdId={householdId} suggestions={historySuggestions} />
     </div>
   )
 }

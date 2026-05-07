@@ -109,3 +109,32 @@ export async function deleteCheckedItems(listId: string) {
   revalidateShopping()
   return { success: true }
 }
+
+export async function addCheckedItemsToStock(listId: string, householdId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const admin = createAdminClient()
+  const { data: items } = await admin
+    .from('shopping_items')
+    .select('name, quantity, unit')
+    .eq('list_id', listId)
+    .eq('is_checked', true)
+
+  if (!items || items.length === 0) return { error: 'Aucun article coché' }
+
+  const { error } = await admin.from('stock_items').insert(
+    items.map(item => ({
+      household_id: householdId,
+      name: item.name,
+      quantity: item.quantity ?? 1,
+      unit: item.unit ?? null,
+      location: 'placard',
+    }))
+  )
+
+  if (error) return { error: error.message }
+  revalidatePath('/stock')
+  return { count: items.length }
+}

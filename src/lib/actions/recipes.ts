@@ -152,6 +152,59 @@ export async function deleteMealPlan(planId: string) {
   return { success: true }
 }
 
+type SuggestedIngredient = { name: string; quantity?: number; unit?: string }
+type SuggestedRecipeData = {
+  title: string
+  tags: string[]
+  prep_minutes: number
+  cook_minutes: number
+  servings: number
+  ingredients: SuggestedIngredient[]
+}
+
+export async function addSuggestedRecipe(householdId: string, recipe: SuggestedRecipeData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const admin = createAdminClient()
+  const { data: existing } = await admin
+    .from('recipes')
+    .select('id')
+    .eq('household_id', householdId)
+    .ilike('title', recipe.title)
+    .single()
+
+  if (existing) return { error: 'Cette recette est déjà dans ton carnet' }
+
+  const { data: created, error } = await admin.from('recipes').insert({
+    household_id: householdId,
+    title: recipe.title,
+    tags: recipe.tags,
+    prep_minutes: recipe.prep_minutes,
+    cook_minutes: recipe.cook_minutes,
+    servings: recipe.servings,
+    created_by: user.id,
+  }).select('id').single()
+
+  if (error) return { error: error.message }
+
+  if (recipe.ingredients.length > 0) {
+    await admin.from('recipe_ingredients').insert(
+      recipe.ingredients.map((ing, i) => ({
+        recipe_id: created.id,
+        name: ing.name,
+        quantity: ing.quantity ?? null,
+        unit: ing.unit ?? null,
+        position: i,
+      }))
+    )
+  }
+
+  revalidatePath('/recipes')
+  return { id: created.id }
+}
+
 export async function addIngredientsToShopping(
   recipeId: string,
   householdId: string,
