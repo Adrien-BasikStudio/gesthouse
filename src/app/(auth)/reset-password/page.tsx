@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,27 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [ready, setReady] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    // Supabase envoie le lien avec #access_token&type=recovery
+    // Le client le parse automatiquement et émet PASSWORD_RECOVERY
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setReady(true)
+      }
+    })
+
+    // Si déjà connecté en mode recovery (ex: retour arrière)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setReady(true)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +59,20 @@ export default function ResetPasswordPage() {
 
     toast.success('Mot de passe mis à jour !')
     router.push('/tasks')
+  }
+
+  if (!ready) {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-sm text-center">
+          <CardHeader>
+            <div className="text-4xl mb-2">⏳</div>
+            <CardTitle>Vérification en cours…</CardTitle>
+            <CardDescription>On vérifie ton lien de réinitialisation.</CardDescription>
+          </CardHeader>
+        </Card>
+      </main>
+    )
   }
 
   return (
