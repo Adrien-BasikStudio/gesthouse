@@ -74,7 +74,13 @@ export default function LoginForm() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-4">
+          <p className="text-center text-sm text-muted-foreground mt-3">
+            <Link href="/forgot-password" className="underline underline-offset-4 hover:text-foreground">
+              Mot de passe oublié ?
+            </Link>
+          </p>
+
+          <p className="text-center text-sm text-muted-foreground mt-2">
             Pas encore là ?{' '}
             <Link
               href={`/signup${next !== '/tasks' ? `?next=${encodeURIComponent(next)}` : ''}`}
