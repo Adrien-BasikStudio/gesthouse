@@ -159,6 +159,7 @@ type SuggestedRecipeData = {
   prep_minutes: number
   cook_minutes: number
   servings: number
+  instructions?: string
   ingredients: SuggestedIngredient[]
 }
 
@@ -184,6 +185,7 @@ export async function addSuggestedRecipe(householdId: string, recipe: SuggestedR
     prep_minutes: recipe.prep_minutes,
     cook_minutes: recipe.cook_minutes,
     servings: recipe.servings,
+    instructions: recipe.instructions ?? null,
     created_by: user.id,
   }).select('id').single()
 
