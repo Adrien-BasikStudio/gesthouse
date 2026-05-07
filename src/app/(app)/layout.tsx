@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getActiveHouseholdId } from '@/lib/active-household'
 import BottomNav from '@/components/layout/bottom-nav'
+import NotesFab from '@/components/layout/notes-fab'
 import PwaRegister from '@/components/layout/pwa-register'
 import NotificationPrompt from '@/components/layout/notification-prompt'
 
@@ -31,6 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </>
       )}
       <main className="flex-1">{children}</main>
+      <NotesFab />
       <BottomNav />
     </div>
   )

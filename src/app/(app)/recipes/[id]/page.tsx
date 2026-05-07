@@ -213,16 +213,20 @@ export default async function RecipeDetailPage({
         )}
 
         {/* Instructions */}
-        {recipe.instructions && (
-          <section>
-            <h2 className="text-base font-semibold mb-2">Préparation</h2>
+        <section>
+          <h2 className="text-base font-semibold mb-2">Préparation</h2>
+          {recipe.instructions ? (
             <div className="bg-card border rounded-2xl px-4 py-3">
               <p className="text-sm whitespace-pre-line leading-relaxed text-foreground/90">
                 {recipe.instructions}
               </p>
             </div>
-          </section>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground italic px-1">
+              Aucune instruction. Appuie sur Modifier pour en ajouter.
+            </p>
+          )}
+        </section>
 
         {/* Source */}
         {recipe.source_url && (
