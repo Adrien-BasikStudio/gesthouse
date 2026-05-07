@@ -1,8 +1,8 @@
 'use client'
 
 import { useTransition } from 'react'
-import { Crown, X } from 'lucide-react'
-import { removeMember } from '@/lib/actions/household'
+import { Crown, X, ShieldCheck, ShieldOff } from 'lucide-react'
+import { removeMember, updateMemberRole } from '@/lib/actions/household'
 import { toast } from 'sonner'
 
 type Member = {
@@ -33,6 +33,19 @@ export default function MembersList({
     })
   }
 
+  function handleRoleToggle(userId: string, currentRole: string, name: string) {
+    const newRole = currentRole === 'admin' ? 'member' : 'admin'
+    const msg = newRole === 'admin'
+      ? `Passer ${name} en admin ?`
+      : `Retirer les droits admin de ${name} ?`
+    if (!confirm(msg)) return
+    startTransition(async () => {
+      const result = await updateMemberRole(householdId, userId, newRole)
+      if (result?.error) toast.error(result.error)
+      else toast.success(`Rôle de ${name} mis à jour.`)
+    })
+  }
+
   return (
     <div className="bg-card rounded-2xl border divide-y">
       {members.map((member) => {
@@ -49,24 +62,33 @@ export default function MembersList({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="font-medium text-sm">{name}</span>
-                {member.role === 'admin' && (
-                  <Crown className="size-3.5 text-amber-500" />
-                )}
-                {isCurrentUser && (
-                  <span className="text-xs text-muted-foreground">(toi)</span>
-                )}
+                {member.role === 'admin' && <Crown className="size-3.5 text-amber-500" />}
+                {isCurrentUser && <span className="text-xs text-muted-foreground">(toi)</span>}
               </div>
-              <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+              <p className="text-xs text-muted-foreground capitalize">{member.role === 'admin' ? 'Admin' : 'Membre'}</p>
             </div>
 
             {isAdmin && !isCurrentUser && (
-              <button
-                onClick={() => handleRemove(member.user_id, name)}
-                disabled={isPending}
-                className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <X className="size-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleRoleToggle(member.user_id, member.role, name)}
+                  disabled={isPending}
+                  title={member.role === 'admin' ? 'Retirer admin' : 'Passer admin'}
+                  className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-amber-500 hover:bg-amber-50 transition-colors"
+                >
+                  {member.role === 'admin'
+                    ? <ShieldOff className="size-4" />
+                    : <ShieldCheck className="size-4" />
+                  }
+                </button>
+                <button
+                  onClick={() => handleRemove(member.user_id, name)}
+                  disabled={isPending}
+                  className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
             )}
           </div>
         )

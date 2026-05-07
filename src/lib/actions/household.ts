@@ -136,3 +136,105 @@ export async function removeMember(householdId: string, userId: string) {
   revalidatePath('/settings')
   return { success: true }
 }
+
+export async function updateMemberRole(householdId: string, userId: string, role: 'admin' | 'member') {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('household_members')
+    .update({ role })
+    .eq('household_id', householdId)
+    .eq('user_id', userId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
+export async function updateHousehold(householdId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const name = String(formData.get('name') ?? '').trim()
+  const emoji = String(formData.get('emoji') ?? '').trim()
+  if (!name) return { error: 'Nom requis' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('households')
+    .update({ name, emoji: emoji || '🏠' })
+    .eq('id', householdId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  revalidatePath('/home')
+  return { success: true }
+}
+
+export async function leaveHousehold(householdId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const admin = createAdminClient()
+
+  // Vérifie qu'il reste au moins un autre admin
+  const { data: admins } = await admin
+    .from('household_members')
+    .select('user_id')
+    .eq('household_id', householdId)
+    .eq('role', 'admin')
+    .neq('user_id', user.id)
+
+  const { data: members } = await admin
+    .from('household_members')
+    .select('user_id')
+    .eq('household_id', householdId)
+    .neq('user_id', user.id)
+
+  if (members && members.length > 0 && (!admins || admins.length === 0)) {
+    return { error: 'Désigne un autre admin avant de partir.' }
+  }
+
+  const { error } = await admin
+    .from('household_members')
+    .delete()
+    .eq('household_id', householdId)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  // Supprime le foyer si plus personne
+  if (!members || members.length === 0) {
+    await admin.from('households').delete().eq('id', householdId)
+  }
+
+  redirect('/onboarding')
+}
+
+export async function deleteHousehold(householdId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const admin = createAdminClient()
+
+  // Vérif admin
+  const { data: membership } = await admin
+    .from('household_members')
+    .select('role')
+    .eq('household_id', householdId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'admin') return { error: 'Accès refusé' }
+
+  const { error } = await admin.from('households').delete().eq('id', householdId)
+  if (error) return { error: error.message }
+
+  redirect('/onboarding')
+}
