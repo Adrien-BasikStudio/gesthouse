@@ -74,7 +74,7 @@ export default function AddRecipeSheet({ householdId }: { householdId: string })
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Titre *</Label>
-            <Input id="title" name="title" placeholder="Tarte aux pommes, Pasta bolognese…" required autoFocus />
+            <Input id="title" name="title" placeholder="Tarte aux pommes, Pasta bolognese…" required/>
           </div>
 
           {/* Times + servings */}

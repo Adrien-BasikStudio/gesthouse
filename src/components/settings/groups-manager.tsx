@@ -139,7 +139,7 @@ export default function GroupsManager({
                   onChange={e => setEditName(e.target.value)}
                   placeholder="Nom du groupe"
                   className="flex-1"
-                  autoFocus
+                 
                 />
               </div>
 
@@ -230,7 +230,7 @@ export default function GroupsManager({
               onChange={e => setNewName(e.target.value)}
               placeholder="Nom du groupe (ex: Famille, Enfants…)"
               className="flex-1"
-              autoFocus
+             
             />
           </div>
 

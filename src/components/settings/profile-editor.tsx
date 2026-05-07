@@ -47,7 +47,7 @@ export default function ProfileEditor({
                 value={name}
                 onChange={e => setName(e.target.value)}
                 className="h-8 text-sm"
-                autoFocus
+               
                 required
               />
               <Button type="submit" size="sm" disabled={isPending}>

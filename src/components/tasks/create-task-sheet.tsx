@@ -80,7 +80,7 @@ export default function CreateTaskSheet({
                 name="title"
                 placeholder="Sortir les poubelles"
                 required
-                autoFocus
+               
               />
             </div>
 

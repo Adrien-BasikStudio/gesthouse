@@ -130,7 +130,7 @@ export default function StockItemRow({ item }: { item: Item }) {
                 name="name"
                 defaultValue={item.name}
                 required
-                autoFocus
+               
               />
             </div>
 

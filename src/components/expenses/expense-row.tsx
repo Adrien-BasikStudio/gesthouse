@@ -114,7 +114,7 @@ export default function ExpenseRow({
                     name="description"
                     defaultValue={expense.description}
                     required
-                    autoFocus
+                   
                   />
                 </div>
 

@@ -120,7 +120,7 @@ function EventEditSheet({
               name="title"
               defaultValue={event.title}
               required
-              autoFocus
+             
             />
           </div>
 

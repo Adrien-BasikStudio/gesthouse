@@ -166,7 +166,7 @@ export default function TaskRow({
                   name="title"
                   defaultValue={task.title}
                   required
-                  autoFocus
+                 
                 />
               </div>
 

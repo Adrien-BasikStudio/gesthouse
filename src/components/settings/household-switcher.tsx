@@ -81,7 +81,7 @@ export default function HouseholdSwitcher({
             onChange={e => setInviteUrl(e.target.value)}
             placeholder="Lien d'invitation..."
             className="flex-1 text-sm border rounded-xl px-3 py-2 outline-none focus:border-primary"
-            autoFocus
+           
           />
           <button type="submit" className="px-3 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium">
             Rejoindre

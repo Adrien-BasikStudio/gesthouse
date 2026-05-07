@@ -66,7 +66,7 @@ export default function AddStockSheet({ householdId }: { householdId: string }) 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4 pb-6">
           <div className="space-y-2">
             <Label htmlFor="name">Article *</Label>
-            <Input id="name" name="name" placeholder="Lait, Pâtes, Tomates…" required autoFocus />
+            <Input id="name" name="name" placeholder="Lait, Pâtes, Tomates…" required/>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

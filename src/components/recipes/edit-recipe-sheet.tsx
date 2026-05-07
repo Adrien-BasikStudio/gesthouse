@@ -111,7 +111,7 @@ export default function EditRecipeSheet({
               name="title"
               defaultValue={recipe.title}
               required
-              autoFocus
+             
             />
           </div>
 

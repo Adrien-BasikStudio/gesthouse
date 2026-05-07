@@ -54,7 +54,7 @@ export default function CreateListButton({ householdId }: { householdId: string 
               name="name"
               defaultValue="Courses"
               required
-              autoFocus
+             
             />
           </div>
           <Button type="submit" className="w-full" disabled={isPending}>

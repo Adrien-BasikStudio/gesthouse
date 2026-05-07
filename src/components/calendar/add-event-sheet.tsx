@@ -83,7 +83,7 @@ export default function AddEventSheet({
         <form onSubmit={handleSubmit} className="space-y-4 mt-4 pb-6">
           <div className="space-y-2">
             <Label htmlFor="title">Titre *</Label>
-            <Input id="title" name="title" placeholder="Rendez-vous médecin" required autoFocus />
+            <Input id="title" name="title" placeholder="Rendez-vous médecin" required/>
           </div>
 
           <div className="space-y-2">
