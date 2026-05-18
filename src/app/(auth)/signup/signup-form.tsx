@@ -164,6 +164,12 @@ export default function SignupForm() {
               Se connecter
             </Link>
           </p>
+          <p className="text-center text-xs text-muted-foreground/60 mt-2">
+            En créant un compte, vous acceptez notre{' '}
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-muted-foreground transition-colors">
+              politique de confidentialité
+            </Link>.
+          </p>
         </CardContent>
       </Card>
     </main>

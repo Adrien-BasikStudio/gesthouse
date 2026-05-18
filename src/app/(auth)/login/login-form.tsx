@@ -91,6 +91,11 @@ export default function LoginForm() {
           </p>
         </CardContent>
       </Card>
+      <p className="text-center text-xs text-muted-foreground/60 mt-4">
+        <Link href="/privacy" className="hover:text-muted-foreground transition-colors">
+          Politique de confidentialité
+        </Link>
+      </p>
     </main>
   )
 }
