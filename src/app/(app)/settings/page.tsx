@@ -12,6 +12,7 @@ import ChangePassword from '@/components/settings/change-password'
 import HouseholdEditor from '@/components/settings/household-editor'
 import DangerZone from '@/components/settings/danger-zone'
 import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -159,6 +160,13 @@ export default async function SettingsPage() {
         <div className="bg-card rounded-2xl border">
           <LogoutButton />
         </div>
+        <p className="text-center text-xs text-muted-foreground/50 pt-2">
+          <Link href="/privacy" className="hover:text-muted-foreground transition-colors">
+            Politique de confidentialité
+          </Link>
+          {' · '}
+          <span>v{process.env.npm_package_version ?? '1.0'}</span>
+        </p>
       </section>
     </div>
   )
