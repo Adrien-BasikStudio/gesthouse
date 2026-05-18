@@ -65,6 +65,10 @@ export async function updateGroup(groupId: string, formData: FormData) {
 }
 
 export async function deleteGroup(groupId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   await admin.from('household_groups').delete().eq('id', groupId)
   revalidatePath('/settings')

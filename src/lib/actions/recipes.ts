@@ -5,6 +5,20 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+/** Only allow http(s) URLs — blocks javascript:, data:, etc. */
+function sanitizeUrl(value: FormDataEntryValue | null): string | null {
+  if (!value) return null
+  const str = String(value).trim()
+  if (!str) return null
+  try {
+    const url = new URL(str)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
+    return str
+  } catch {
+    return null
+  }
+}
+
 export async function createRecipe(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,8 +39,8 @@ export async function createRecipe(formData: FormData) {
     prep_minutes: formData.get('prep_minutes') ? Number(formData.get('prep_minutes')) : null,
     cook_minutes: formData.get('cook_minutes') ? Number(formData.get('cook_minutes')) : null,
     instructions: formData.get('instructions') ? String(formData.get('instructions')) : null,
-    source_url: formData.get('source_url') ? String(formData.get('source_url')) : null,
-    video_url: formData.get('video_url') ? String(formData.get('video_url')) : null,
+    source_url: sanitizeUrl(formData.get('source_url')),
+    video_url: sanitizeUrl(formData.get('video_url')),
     tags: tags.length > 0 ? tags : null,
     created_by: user.id,
   }).select('id').single()
@@ -76,8 +90,8 @@ export async function updateRecipe(recipeId: string, formData: FormData) {
     prep_minutes: formData.get('prep_minutes') ? Number(formData.get('prep_minutes')) : null,
     cook_minutes: formData.get('cook_minutes') ? Number(formData.get('cook_minutes')) : null,
     instructions: formData.get('instructions') ? String(formData.get('instructions')) : null,
-    source_url: formData.get('source_url') ? String(formData.get('source_url')) : null,
-    video_url: formData.get('video_url') ? String(formData.get('video_url')) : null,
+    source_url: sanitizeUrl(formData.get('source_url')),
+    video_url: sanitizeUrl(formData.get('video_url')),
     tags: tags.length > 0 ? tags : null,
   }).eq('id', recipeId)
 
@@ -111,16 +125,24 @@ export async function updateRecipe(recipeId: string, formData: FormData) {
 }
 
 export async function toggleFavorite(recipeId: string, current: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('recipes')
     .update({ is_favorite: !current })
     .eq('id', recipeId)
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la mise à jour' }
   revalidatePath('/recipes')
   return { success: true }
 }
 
 export async function deleteRecipe(recipeId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   const admin = createAdminClient()
   await admin.from('recipes').delete().eq('id', recipeId)
   revalidatePath('/recipes')
@@ -148,6 +170,10 @@ export async function planMeal(formData: FormData) {
 }
 
 export async function deleteMealPlan(planId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   await admin.from('meal_plans').delete().eq('id', planId)
   revalidatePath('/recipes')

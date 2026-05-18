@@ -103,32 +103,42 @@ export async function completeTask(taskId: string) {
 }
 
 export async function uncompleteTask(taskId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('tasks')
     .update({ completed_at: null, completed_by: null })
     .eq('id', taskId)
 
-  if (error) return { error: error.message }
-  // Pas de revalidatePath : le realtime UPDATE met à jour le state local
+  if (error) return { error: 'Erreur lors de la mise à jour' }
   return { success: true }
 }
 
 export async function deleteTask(taskId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('tasks').delete().eq('id', taskId)
-  if (error) return { error: error.message }
-  // Pas de revalidatePath : le realtime DELETE met à jour le state local
+  if (error) return { error: 'Erreur lors de la suppression' }
   return { success: true }
 }
 
 export async function deleteCompletedTasks(householdId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin
     .from('tasks')
     .delete()
     .eq('household_id', householdId)
     .not('completed_at', 'is', null)
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la suppression' }
   revalidatePath('/tasks')
   return { success: true }
 }

@@ -114,15 +114,37 @@ export async function acceptInvite(token: string) {
 export async function switchHousehold(householdId: string) {
   const { cookies } = await import('next/headers')
   const store = await cookies()
-  store.set('fourmis_household', householdId, { path: '/', maxAge: 60 * 60 * 24 * 365 })
+  store.set('fourmis_household', householdId, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  })
   revalidatePath('/')
   redirect('/tasks')
 }
 
-export async function removeMember(householdId: string, userId: string) {
+async function requireAdmin(householdId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) return { user: null, error: 'Non authentifié' as const }
+
+  const admin = createAdminClient()
+  const { data: membership } = await admin
+    .from('household_members')
+    .select('role')
+    .eq('household_id', householdId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'admin') return { user: null, error: 'Accès refusé' as const }
+  return { user, error: null }
+}
+
+export async function removeMember(householdId: string, userId: string) {
+  const { error: authError } = await requireAdmin(householdId)
+  if (authError) return { error: authError }
 
   const admin = createAdminClient()
   const { error } = await admin
@@ -131,16 +153,15 @@ export async function removeMember(householdId: string, userId: string) {
     .eq('household_id', householdId)
     .eq('user_id', userId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la suppression' }
 
   revalidatePath('/settings')
   return { success: true }
 }
 
 export async function updateMemberRole(householdId: string, userId: string, role: 'admin' | 'member') {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { error: authError } = await requireAdmin(householdId)
+  if (authError) return { error: authError }
 
   const admin = createAdminClient()
   const { error } = await admin
@@ -149,15 +170,14 @@ export async function updateMemberRole(householdId: string, userId: string, role
     .eq('household_id', householdId)
     .eq('user_id', userId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la mise à jour' }
   revalidatePath('/settings')
   return { success: true }
 }
 
 export async function updateHousehold(householdId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { error: authError } = await requireAdmin(householdId)
+  if (authError) return { error: authError }
 
   const name = String(formData.get('name') ?? '').trim()
   const emoji = String(formData.get('emoji') ?? '').trim()
@@ -169,7 +189,7 @@ export async function updateHousehold(householdId: string, formData: FormData) {
     .update({ name, emoji: emoji || '🏠' })
     .eq('id', householdId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la mise à jour' }
   revalidatePath('/settings')
   revalidatePath('/home')
   return { success: true }

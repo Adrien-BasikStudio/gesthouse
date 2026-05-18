@@ -62,9 +62,13 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function deleteEvent(eventId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('events').delete().eq('id', eventId)
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la suppression' }
   revalidatePath('/calendar')
   return { success: true }
 }

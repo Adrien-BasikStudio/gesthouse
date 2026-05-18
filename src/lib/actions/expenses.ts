@@ -13,6 +13,10 @@ function revalidateExpenses() {
 }
 
 export async function createExpenseGroup(householdId: string, name: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('expense_groups')
@@ -20,7 +24,7 @@ export async function createExpenseGroup(householdId: string, name: string) {
     .select('id')
     .single()
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la création' }
   revalidateExpenses()
   return { id: data.id }
 }
@@ -137,9 +141,13 @@ export async function addSettlement(formData: FormData) {
 }
 
 export async function deleteExpense(expenseId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('expenses').delete().eq('id', expenseId)
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la suppression' }
   revalidateExpenses()
   return { success: true }
 }

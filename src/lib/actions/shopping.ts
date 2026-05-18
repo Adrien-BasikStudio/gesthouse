@@ -78,26 +78,37 @@ export async function toggleItem(itemId: string, checked: boolean) {
 }
 
 export async function deleteItem(itemId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('shopping_items').delete().eq('id', itemId)
-  if (error) return { error: error.message }
-  // Pas de revalidatePath : le realtime met à jour le state local directement
+  if (error) return { error: 'Erreur lors de la suppression' }
   return { success: true }
 }
 
 export async function resetList(listId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin
     .from('shopping_items')
     .update({ is_checked: false, checked_by: null })
     .eq('list_id', listId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la réinitialisation' }
   revalidateShopping()
   return { success: true }
 }
 
 export async function deleteCheckedItems(listId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin
     .from('shopping_items')
@@ -105,7 +116,7 @@ export async function deleteCheckedItems(listId: string) {
     .eq('list_id', listId)
     .eq('is_checked', true)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la suppression' }
   revalidateShopping()
   return { success: true }
 }

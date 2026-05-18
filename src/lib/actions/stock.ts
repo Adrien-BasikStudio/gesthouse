@@ -47,14 +47,22 @@ export async function addStockItem(formData: FormData) {
 }
 
 export async function deleteStockItem(itemId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { error } = await admin.from('stock_items').delete().eq('id', itemId)
-  if (error) return { error: error.message }
+  if (error) return { error: 'Erreur lors de la suppression' }
   revalidatePath('/stock')
   return { success: true }
 }
 
 export async function updateStockItem(itemId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const name = String(formData.get('name') ?? '').trim()
   if (!name) return { error: 'Nom requis' }
@@ -74,6 +82,10 @@ export async function updateStockItem(itemId: string, formData: FormData) {
 }
 
 export async function updateQuantity(itemId: string, delta: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
   const admin = createAdminClient()
   const { data: item } = await admin
     .from('stock_items')
