@@ -38,7 +38,9 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/meals') ||
     request.nextUrl.pathname.startsWith('/stock') ||
     request.nextUrl.pathname.startsWith('/expenses') ||
-    request.nextUrl.pathname.startsWith('/settings')
+    request.nextUrl.pathname.startsWith('/settings') ||
+    request.nextUrl.pathname.startsWith('/home') ||
+    request.nextUrl.pathname.startsWith('/notes')
 
   if (!user && isAppRoute) {
     const url = request.nextUrl.clone()
